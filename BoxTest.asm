@@ -1,17 +1,21 @@
 ; Libraries
 INCLUDE "lib/16-bit Macros.inc"
 INCLUDE "lib/Shift.inc"
+;INCLUDE "Hardware.inc"
 
 INCLUDE "charmap.asm"
 ; INCLUDE "lib/Pucrunch.asm"
 
 ; Hardware macros
+JOYP EQU $FF00 ; Joypad
 TMA EQU $FF06  ; Timer modulo
 TAC EQU $FF07  ; Timer control
 NR11 EQU $FF11 ; PU1 Length & Wave duty
 NR12 EQU $FF12 ; PU1 Envelope
 NR13 EQU $FF13 ; PU1 Freq low
 NR14 EQU $FF14 ; PU1 Freq high +
+NR23 EQU $FF18 ; PU2 Freq low
+NR33 EQU $FF1D ; WAV Freq low
 LCDC EQU $FF40 ; LCD Control
 STAT EQU $FF41 ; LCDC Status
 SCY EQU $FF42  ; Background Scroll Y
@@ -36,6 +40,7 @@ INCLUDE "Header.asm"
 SECTION "General Variables", WRAM0
 VBlankOccurred: db
 PlayingOnGBA: db
+ResetDisallowed: db
 TempAnimFrame: db
 TempAnimWait: db
 
@@ -46,8 +51,6 @@ StackSpace: ds StackSize
 SECTION "Start",HOME[$0150]
 Start:
 ; ld c, a already executed
-    ld sp, StackSpace + StackSize - 1
-    push bc
     JumpToOtherBank Setup
 
 
@@ -57,7 +60,6 @@ INCLUDE "Sound/Engine.asm"
 
 SECTION "Setup", ROMX
 Setup:
-    pop bc
 ; b contains the GBA status bit
 ; c contains the GBC status byte
     ld a, c
@@ -65,23 +67,29 @@ Setup:
     jp nz, .OriginalGameBoy
 
     bit 0, b
-    jr z, .Continue
+    jr z, GameStartup
 
 .PlayingOnGBA
     ld a, 1
     ld [PlayingOnGBA], a
-    jr .Continue
+    jr GameStartup
 
 .OriginalGameBoy
     JumpToOtherBank IncompatibleGB
 
-.Continue
-; Switch to double speed mode
-; SwitchSpeed
+GameStartup:
+; This is the point where the game returns to on reset
+    xor a
+    ld [ResetDisallowed], a
+
+; Set up stack
+    ld sp, StackSpace + StackSize - 1
+
+; Use single speed mode, if we were in double speed when we reset
+    DisableDoubleSpeed
 
 ; Set up timer
-    xor a ; Reset the timer modulo value
-    ld [TMA], a
+    ld [TMA], a ; Reset the timer modulo value
 
     ld a, %100 ; 4096 Hz timer, interrupts at 16 Hz. Could be subject to change!
     ld [TAC], a
@@ -91,7 +99,9 @@ Setup:
     ld [STAT], a
 
     ld a, %00000111 ; Timer, H-Blank (LCD STAT), V-Blank
-    ld [IE], a ; TODO: Add serial to this to add link capablilities
+    ld [IE], a ; TODO: Add serial to this to add link capablilities?
+
+    call InitSoundEngine
 
 ; Start the temporary animation frame counter
     xor a
@@ -99,20 +109,30 @@ Setup:
     ei
 
 .SRAMTest
+    ld a, 1
+    ld [ResetDisallowed], a
+
     ld a, $0A
     ld [$0000], a
+
     ld a, [$A000]
     ld c, a
+
     xor a
     ld [$A000], a
+
     ld a, [$A000]
     ld b, a
+
     ld a, c
     ld [$A000], a
+
     xor a
     ld [$0000], a
+    ld [ResetDisallowed], a
+
     ld a, b
-    cp $00
+    or a
     jp nz, .SRAMBroken
 
 .MainBit
@@ -124,7 +144,7 @@ Setup:
     call ClearTextBox
     call SetDefaultTextColours
 
-    SwitchSpeed
+    EnableDoubleSpeed
 
     ld hl, SavingString
     call PrintString
@@ -163,7 +183,21 @@ Setup:
     call CloseTextBox
     call FastFadeToBlack
 
-    SwitchSpeed
+    DisableDoubleSpeed
+
+    call VerifyChecksum
+    or a
+    jr nz, .AttemptingAnRPGTextBox
+
+.AttemptingAQuicksaveBlackout
+    ld c, 15
+    call WaitFrames
+
+    call ShowTextBox
+    ld hl, FakeQuicksaveText
+    call PrintString
+    call BattleTextFadeIn
+    jr .FillerHalt
 
 .AttemptingAnRPGTextBox
     ld c, 15
@@ -172,8 +206,8 @@ Setup:
     call FastFadeToWhite
     call ShowTextBox
 
-   ld hl, FakeRPGTextB
-   call PrintString
+    ld hl, FakeRPGTextB
+    call PrintString
     jr .FillerHalt
 
 ;    SwitchSpeed
@@ -196,13 +230,14 @@ Setup:
 WipeSaveData:
     ld a, $01
     ld [VBK], a
+    ld [ResetDisallowed], a
 
     ld a, $0A
     ld [$0000], a
 
     ld b, 15 ; Number of banks
 .OuterSaveLoop
-    SwitchRAMBank b
+    SwitchSRAMBank b
     ld hl, $A000
 .InnerSaveLoop
     xor a
@@ -219,11 +254,12 @@ WipeSaveData:
 
     xor a
     ld [$0000], a
+    ld [ResetDisallowed], a
     ret
 
 WarningString:
-    db "The save data must \nbe initialised.\n_@_", 1, RedColour, "_#1__`_", 12
-    db "Previous data will be lost._`_", 20, "\\"
+    db "The save data must \nbe initialised._@_", 1, RedColour, "_#1__`_", 12
+    db " Previous\ndata will be lost._`_", 20, "~\\"
 
 SavingString:
     db "Saving...\n_@_", 1, RedColour, "_#1__`_", 8, "Do not turn off\nthe power._#3_\\"
@@ -235,13 +271,29 @@ FoolishFools:
 
 FakeRPGTextB:
     db "Sam used\nFunctional Harmony!\n"
-    db "_`_", 15, "...but nothing happened.\\'"
+    db "_`_", 15, "...but nothing happened.~\\'"
 
 FakeRPGText:
     db "What now?\n"
-db "§", %111, "_@_", 1, $00, $00, "_@_", 2, $00, $00, "_#2_" ; Setting max speed, no SFX, black colours
+    db "§", %111, "_@_", 1, $00, $00, "_@_", 2, $00, $00, "_#2_" ; Setting max speed, no SFX, black colours
     db "\t", "Fight", "\t^_#1_ ", "Magic",  "\t\t ", "Taunt\n"
     db "\t", "Item",  "\t^^ ",    "Tattle", "\t ",   "Run Away", "§", 0, "\\"
+
+FakeQuicksaveText:
+    db "§", %111, "_@_", 1, $00, $00, "_@_", 2, $00, $00, "_#1_" ; Setting max speed, no SFX, black colours
+    ;db "Don't turn off\n"
+    ;db "the power.\\"
+    db "Don't remove the\n"
+    db "memory card\n"
+    db "in Slot A.\\"
+
+    ; Ideas for silly quicksave messages:
+    ; "Don't turn off the power."
+    ; "Don't remove the Game Pak."
+    ; "Don't drop the Game Boy."
+    ; "Don't remove the memory card in Slot A."
+    ; "Don't throw the Game Boy into a fire."
+    ; "Don't corrupt your save data."
 
 ; Fast Fade Functions
 ; TODO: Refactor these, since there's tonnes of code reuse!
@@ -453,18 +505,37 @@ INCLUDE "IncompatibleGB.asm"
 SECTION "Temp Anim", ROM0
 
 VBlankHandler:
-    push af
+    push af ; Push everything
     push bc
     push de
     push hl
+
+.CheckReset
+    ld a, [ResetDisallowed]
+    or a
+    jr nz, .SetVBlankOccuredFlag
+
+    ld a, %11011111 ; Set buttons; need to reset them to what they were before!
+    ld [JOYP], a
+
+    ld a, [JOYP]
+    and a, %00001111
+    jp z, GameStartup
+
+.SetVBlankOccuredFlag
     xor a
     ld [VBlankOccurred], a
+
+.Anim
+    call SoundEngineUpdate
     call TempAnim
-    pop hl
+
+    pop hl ; Pop everything
     pop de
     pop bc
     pop af
     reti
+
 
 TempAnim:
     ld a, [TempAnimWait]
@@ -478,14 +549,25 @@ TempAnim:
 
 
 .NextFrame
-    ld a, 5 ; Need to change this from being hard-coded
+    ld a, 15 ; Need to change this from being hard-coded
+    ; ld a, 5
     ld [TempAnimWait], a
 
 .SetUpFrame
     ld a, [TempAnimFrame]
     ld [TempAnimFrame], a
     ld c, a
-    add a, SaveAnim
+    ; add a, SaveAnim
+    or a
+    jr nz, .HideArrow
+
+.ShowArrow
+    ld a, NextTextPromptArrow
+    ld b, a
+    jr .IncrementFrame
+
+.HideArrow
+    xor a
     ld b, a
 
 .IncrementFrame
@@ -499,3 +581,96 @@ TempAnim:
 .Next
     ld [TempAnimFrame], a
     jp ReplaceLastTile
+
+SECTION "VerifyChecksums", ROM0
+
+VerifyChecksum:
+; Leaves 0 in a if the checksum is correct, 1 otherwise
+    EnableDoubleSpeed
+    PushROMBank
+    SwitchROMBank 0
+    ld de, 0 ; Checksum
+    ld bc, $4000 ; Address
+    jr .InnerLoop
+
+.OuterLoop
+    ld a, [CurrentROMBank]
+    cp $FF
+    jr z, .Done
+
+    inc a
+    SwitchROMBankFromRegister
+    ld bc, $4000 ; Address
+
+.InnerLoop
+    ld16rr hl, bc
+    ld a, [hl]
+    inc bc
+
+    ld l, a
+    xor a
+    ld h, a
+
+    add hl, de
+    ld16rr de, hl
+
+    ld a, b
+    cp $80
+    jr nz, .InnerLoop
+    jr .OuterLoop
+
+.Done
+; Decrement the global checksum from our checksum
+; Compare the two checksums
+    SwitchROMBank 0
+
+    ld a, [$014E]
+    cpl
+    inc a
+    ld l, a
+    ld h, $FF
+
+    add hl, de
+    ld16rr de, hl
+
+    ld a, [$014F]
+    cpl
+    inc a
+    ld l, a
+    ld h, $FF
+
+    add hl, de
+
+    ld a, [$014E]
+    sub h
+    jr nz, .Incorrect
+
+    ld a, [$014F]
+    sub l
+    jr nz, .Incorrect
+
+.Correct
+    xor a
+    jr .CleanUp
+
+.Incorrect
+    ld a, 1
+
+.CleanUp
+    ld b, a
+    PopROMBank
+    DisableDoubleSpeed
+    ld a, b
+    ret
+
+SECTION "TempSong", ROMX[$6000]
+REPT 100
+    db C_4
+    db E_4
+    db B_4
+    db D_5
+    db C_5
+    db E_5
+    db B_5
+    db D_6
+ENDR

@@ -8,14 +8,20 @@ TextTilesPositionY: db       ; The number of tiles down.
 TextTilesWorkSpace: ds 8 * 4 ; Work space for creating the tiles.
                              ; Could instead use more general-purpose work space.
 TextColour: db               ; The current text colour.
-PrintSettings: db            ; 0000 0bxx: - xx = 00 for normal, 01 for faster, 11 for fastest.
+PrintSettings: db            ; 0000 0bss: - ss = 00 for normal, 01 for faster, 11 for fastest.
                              ;            - b = 0 for beeps, 1 for no beeps (SFX)
-                             ; Remaining bits are yet to be decided
+                             ; Remaining bits are yet to be decided (but are currently unused)
 
 SpecialCharactersLimit EQU $E0
 
+SECTION "Blank Tile Data", ROMX[$7000]
+BlankTiles:
+REPT $5B0
+    db $00
+ENDR
+
 SECTION "Text Boxes", ROM0
-CharacterTiles:
+CharacterTiles
     db $00,$00,$00,$00,$00,$00,$00,$00 ; 00) space/tab/null
     db $78,$84,$84,$FC,$84,$84,$84,$00 ; 01) A
     db $F8,$84,$84,$F8,$84,$84,$F8,$00 ; 02) B
@@ -120,7 +126,7 @@ CharacterTiles:
     db $7E,$C1,$81,$91,$83,$81,$81,$7E ; 65) link anim f5
 
 
-LetterWidths:
+LetterWidths
 ; Could be compressed or moved into another bank, but not as essential as for the tiles.
 ; Currently uses 91 bytes. Combine into pairs of nibbles to use 46 bytes instead.
     db 6, 6, 6, 6, 6, 6, 6, 6, 5, 6, 5, 5, 7, 5, 7, 6, 7, 6, 6, 7, 6, 7, 7, 5, 7, 5
@@ -142,6 +148,7 @@ BlueColour  EQUS "$00, $FF"
 GreenColour EQUS "$E0, $03"
 
 ShowTextBox:
+    SwitchWRAMBank BANK(TextTilesPointer)
     xor a
     ld [PrintSettings], a
     call EnsureVBlank
@@ -173,7 +180,7 @@ ShowTextBox:
     ld c, 20
 .MapAttributesLoop
     call EnsureVBlank
-    ld a, (7 | %1000)
+    ld a, (7 | %1000) ; TODO: Write a description
     ld [hl+], a
     dec c
     jr nz, .MapAttributesLoop
@@ -187,7 +194,7 @@ ShowTextBox:
 .SetMapLayout
     call EnsureVBlank
     xor a
-    ld [VBK], a
+    ld [VBK], a ; Use VRAM Bank 0
 
     ld hl, $9C00 + $21
     inc a
@@ -241,7 +248,7 @@ ShowTextBox:
     ld c, 8
     jp WaitFrames
 
-OpeningSound:
+OpeningSound
     db %00010001, %10000101
     db %10110100, %10000101
     db %01000100, %10000111
@@ -283,7 +290,7 @@ ClosingSound:
     db %00010101, %00000100
     db %00010001, %10000101
 
-PlayTextBeep:
+PlayTextBeep
     ld a, %10000000 | $3B
     ld [NR11], a
 
@@ -299,21 +306,14 @@ PlayTextBeep:
     ret
 
 ClearTextBox:
-    ld hl, $8000
-    ld b, $5A
-.OuterLoop
-    ld c, $10
-.InnerLoop
-    call EnsureVBlank
-    xor a
-    ld [hl+], a
-    dec c
-    jr nz, .InnerLoop
+; Clears all of the text box tiles.
+    StartVRAMDMA BlankTiles, $8000, $5B0, 1
+    WaitForVRAMDMAToFinish
 
-    dec b
-    jr nz, .OuterLoop
+SetPrintVariables:
+; Sets up the default variables for string printing.
+    SwitchWRAMBank BANK(TextTilesPointer)
 
-.SetVariables
     xor a
     ld [TextSubtilesPositionX], a
     ld [TextSubtilesPositionY], a
@@ -326,10 +326,16 @@ ClearTextBox:
 
     ld a, $03
     ld [TextColour], a
+
     ret
 
 PrintString:
+; NOTE: Must aim to keep this function compatible with the original GB, except when
+; GBC-specific characters are included. This is because this proceedure is also used
+; for the Incompatible GB screen.
+
 ; Assumes that the pointer to the string to print is in hl
+    SwitchWRAMBank BANK(TextTilesPointer)
     ld a, [hl+]
 .EndOfStringCheck
     and a ; "\\"
@@ -353,10 +359,10 @@ PrintString:
     jr nz, .Finish
     call WaitFrame
 
-    ld a, [PrintSettings]
-    bit 1, a
-    jr nz, .Finish
-    call WaitFrame
+    ;ld a, [PrintSettings]
+    ;bit 1, a
+    ;jr nz, .Finish
+    ;call WaitFrame
 
 .Finish
     pop hl
@@ -364,22 +370,27 @@ PrintString:
     jr PrintString
 
 
-ProcessSpecialCharacter:
+ProcessSpecialCharacter
+; Deals with the special characters
+; TODO: Add "_EXEC_"
 .WaitCheck
     cp "~"
     jr nz, .NewlineCheck
-    ; TODO: Handle
+.Wait
+    call Wait
     jr PrintString
 
 .NewlineCheck
     cp "\n"
     jr nz, .TabCheck
+.Newline
     call MoveToNextLine
     jr PrintString
 
 .TabCheck
     cp "\t"
     jr nz, .PauseCheck
+.Tab
     ld b, 8
     call AdvanceTextPosition
     jr PrintString
@@ -387,6 +398,7 @@ ProcessSpecialCharacter:
 .PauseCheck
     cp "`"
     jr nz, .LongPauseCheck
+.Pause
     ld c, 2
     call WaitFrames
     jr PrintString
@@ -394,6 +406,7 @@ ProcessSpecialCharacter:
 .LongPauseCheck
     cp "_`_"
     jr nz, .PixelAdvanceCheck
+.LongPause
     ld a, [hl+]
     ld c, a
     call WaitFrames
@@ -402,6 +415,7 @@ ProcessSpecialCharacter:
 .PixelAdvanceCheck
     cp "^"
     jr nz, .SpaceCheck
+.PixelAdvance
     ld b, 1
     call AdvanceTextPosition
     jr PrintString
@@ -409,17 +423,19 @@ ProcessSpecialCharacter:
 .SpaceCheck
     cp " "
     jr nz, .Palette0Check
+.Space
     ld b, 4
     call AdvanceTextPosition
     ld a, [PrintSettings]
     bit 1, a
     jr PrintString
     call WaitFrame
-    jr PrintString
+    jp PrintString
 
 .Palette0Check
     cp "_#0_"
-    jr nz, .Palette1Check
+    jp nz, .Palette1Check
+.Palette0
     xor a
     ld [TextColour], a
     jp PrintString
@@ -427,6 +443,7 @@ ProcessSpecialCharacter:
 .Palette1Check
     cp "_#1_"
     jr nz, .Palette2Check
+.Palette1
     ld a, $01
     ld [TextColour], a
     jp PrintString
@@ -434,6 +451,7 @@ ProcessSpecialCharacter:
 .Palette2Check
     cp "_#2_"
     jr nz, .Palette3Check
+.Palette2
     ld a, $02
     ld [TextColour], a
     jp PrintString
@@ -441,6 +459,7 @@ ProcessSpecialCharacter:
 .Palette3Check
     cp "_#3_"
     jr nz, .SetPaletteCheck
+.Palette3
     ld a, $03
     ld [TextColour], a
     jp PrintString
@@ -448,6 +467,7 @@ ProcessSpecialCharacter:
 .SetPaletteCheck
     cp "_@_"
     jr nz, .SetSettingsCheck
+.SetPalette
     ld a, [hl+]
     sla a
     add a, (8 * 7) + %10000000
@@ -461,9 +481,44 @@ ProcessSpecialCharacter:
 .SetSettingsCheck
     cp "§"
     jp nz, PrintString ; Ignore invalid character
+.SetSettings
     ld a, [hl+]
     ld [PrintSettings], a
     jp PrintString
+
+
+Wait
+; Waits for the player to press the A or B button
+    push hl
+    ld a, 5
+    ld [TempAnimWait], a
+    xor a
+    ld [TempAnimFrame], a
+
+.Loop
+    call WaitFrame
+
+    ld a, %00010000 ; Select buttons
+    ld [JOYP], a
+
+.CheckA
+    ld a, [JOYP]
+    bit 0, a ; Check the A button (0 = pressed)
+    jr z, .Continue
+
+.CheckB
+    bit 1, a ; Check the B button
+    jr nz, .Loop
+
+.Continue
+    xor a
+    ld [TempAnimWait], a
+
+    call FastFadeText
+    call ClearTextBox
+    call SetDefaultTextColours
+    pop hl
+    ret
 
 
 PutChar:
@@ -494,8 +549,8 @@ PutChar:
     ld e, a
 .TileCopyLoop
     ld a, [bc]
-    and a
-    jr nz, .BeginCopy
+    and a              ; Checks to see if there's actually any
+    jr nz, .BeginCopy  ; data for this line that needs copying.
 
 .NoNeedToCopy
     inc hl
@@ -510,8 +565,8 @@ PutChar:
 ; OR-ing new tile with old tile
 
 .CheckFirstByte
-    bit 0, e
-    jr z, .CheckSecondByte
+    bit 0, e               ; If bit 0 of the colour is zero, there
+    jr z, .CheckSecondByte ; won't be any data to copy in the first byte.
 
 .FirstByte
     call EnsureVBlank
@@ -521,8 +576,8 @@ PutChar:
 
 .CheckSecondByte
     inc hl
-    bit 1, e
-    jr z, .FinishCopy
+    bit 1, e          ; If bit 1 of the colour is zero, there
+    jr z, .FinishCopy ; won't be any data to copy in the second byte.
 
 .SecondByte
     call EnsureVBlank
@@ -558,6 +613,7 @@ PutChar:
 
 
 CopyChar:
+; Copies a character tile into the tiles workspace memory.
 ; Assumes that the character to put is in a
 .TileCopy
     push af
@@ -567,8 +623,8 @@ CopyChar:
 .ZeroWorkSpace
     xor a
     ld b, 8 * 3 ; Since we've already filled some of the work space
-    ld h, d ; Relies on .TileCopyFunction having the next address to write
-    ld l, e ; to (TextTilesWorkSpace + (2 * 8)) in the de register. This is done for efficiency.
+    ld h, d     ; Relies on .TileCopyFunction having the next address to write
+    ld l, e     ; to (TextTilesWorkSpace + (2 * 8)) in the de register. This is done for efficiency.
 .ZeroWorkSpaceLoop
     ld [hl+], a
     dec b
@@ -576,6 +632,7 @@ CopyChar:
 
 
 .AddDanglers
+; Adds the dangler, if the character needs one.
     pop af
 .gCheck
     cp "g"
@@ -626,10 +683,10 @@ CopyChar:
 
 
 PrepareChar:
+; Copies and shifts a character, ready for printing.
 ; Assumes that the character to put is in a
 ; Does not handle special values.
 ; A more general function, allowing you to manually copy the work space data elsewhere
-
     call CopyChar
 
     ld a, [TextSubtilesPositionX]
@@ -923,7 +980,7 @@ FastFadeText:
 
 ; Manipulate the palette data
     call EnsureVBlank
-    srl16 hl, 2
+    srl16 hl, 1
     ld a, l
     and %11100111
     ld [BGPD], a

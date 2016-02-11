@@ -1,4 +1,5 @@
 INCLUDE "Sound/Macros.asm"
+INCLUDE "lib/AddSub1.inc"
 
 SECTION "SoundVariables", WRAMX
 ; Must define some important sound-y variables
@@ -86,7 +87,7 @@ NOIFXTable: db
 
 ; Slide/vibrato active flags
 VibratoOrSlideActive: db ; 1 if either is active, 0 if not; bit 7 = PU1Mu, ..., 0 = NOIFX
-VibratoActive: db ; 1 if vibrato, 0 if slide; as above
+VibratoActive: db        ; 1 if vibrato, 0 if slide; as above
 
 ; Slide destinations or vibrato bases
 PU1MuSlideDestOrVibratoBase: db
@@ -112,7 +113,8 @@ FrequencyTable:
     INCBIN "Sound/FrequencyTable"
 
 InitSoundEngine::
-    SwitchRAMBank BANK(MuTempo)
+    PushWRAMBank
+    SwitchWRAMBank BANK(MuTempo)
 
     xor a
     ld b, SoundVariableBytes
@@ -122,7 +124,7 @@ InitSoundEngine::
     dec b
     jr nz, .Loop
 
-; TODO: Reinstate the original bank
+    PopWRAMBank
     ret
 
 PlayMusic::
@@ -133,9 +135,211 @@ PlaySFX::
 ; TODO: Start playing a sound effect
     ret
 
-SoundEngineHandleTimer::
-    SwitchRAMBank BANK(MuTempo)
+SoundEngineUpdate::
+; Updates the music and FX into the next frame.
+; Assume that all registers are destroyed after the call.
+    PushWRAMBank
+    SwitchWRAMBank BANK(MuTempo)
+    PushROMBank
 
-; Writing pseudocode…
+CheckIfMusicIsActive
+    ld a, [MuAddressBank]
+    or a
+    jr nz, UpdateMusic
+
+CheckIfSFXIsActive
+    ld a, [FXAddressBank]
+    or a
+    jr nz, UpdateSFX
+    
+FinishSoundEngineUpdate
+    PopROMBank
+    PopWRAMBank
     ret
 
+
+UpdateMusic
+    SwitchROMBank [MuAddressBank]
+
+    ld a, [MuCounter]
+    dec a
+    ld [MuCounter], a
+    jr nz, CheckIfSFXIsActive
+
+    ld a, [MuTempo]
+    ld [MuCounter], a
+    ld hl, PU1MuAddress + 1
+    ld c, 0
+
+.ChannelLoop
+    ld a, [hl+]
+    inc hl
+    or a
+    jr z, .PreIncContinueLoop
+
+    ld a, [hl+]
+    or a
+    jr nz, .ContinueLoop
+
+    call UpdateChannel
+    jr .ContinueLoop
+
+.PreIncContinueLoop
+    inc hl
+.ContinueLoop
+    inc hl
+    inc c
+    ld a, c
+    cp 4
+    jr nz, .ChannelLoop
+
+
+    jr CheckIfSFXIsActive
+
+UpdateSFX
+    SwitchROMBank [FXAddressBank]
+
+    ld a, [FXCounter]
+    dec a
+    ld [FXCounter], a
+    jr nz, FinishSoundEngineUpdate
+    ld b, a
+
+.Continue
+    ; Implement
+    ld a, 4
+
+
+    jr FinishSoundEngineUpdate
+
+
+UpdateChannel
+; b = counter (e.g. MuCounter)
+; c = channel no. (0 = PU1Mu, 7 = NOIFX)
+; NOTE: Modifies de; push it to the stack if needed
+    push hl
+    push bc
+
+    ; TODO: Implement!
+
+.CheckCounter
+    ld b, a
+    or a
+    jr z, .GetNextCommand
+
+.CheckVibratoAndSlide
+    ; TODO: Implement
+
+.FinishUp
+    pop bc
+    pop hl
+
+    ret
+
+
+.GetNextCommand
+; c = channel no. (as UpdateChannel)
+    call CalculateAddress
+
+.GetNextCommandLoop
+.CheckNoteCommand
+    ld a, [hl+]
+    cp CommandByte
+    jr nc, .CheckEnvelopeCommand
+
+.NoteCommand
+    ; TODO: Deal with $00
+    push hl
+    ld hl, FrequencyTable - 2
+    ld b, b
+
+    ld d, 0
+    ld e, a
+    sla e
+    add hl, de
+
+; Putting the frequency into de
+    ld a, [hl+]
+    ld e, a
+    ld a, [hl]
+    ld d, a
+
+; Calculating the destination address
+; TODO: Sort out noise channel
+    ld b, c
+    srl c ; a is now 0-3, for each channel
+
+.PU1Check
+    inc c
+    dec c
+    jr nz, .PU2Check
+
+.PU1Destination
+    ld c, (NR13 & $FF)
+    jr .WriteToDestination
+
+.PU2Check
+    dec c
+    jr nz, .WAVCheck
+
+.PU2Destination
+    ld c, (NR23 & $FF)
+    jr .WriteToDestination
+
+.WAVCheck
+    dec c
+    jr nz, .CleanUp ; TODO: Change this to somewhere sensible!
+
+.WAVDestination
+    ld c, (NR33 & $FF)
+
+.WriteToDestination
+    ld a, e
+    ld [$FF00+c], a
+    inc c
+    ld a, d
+    set 7, a ; Restart sound; TODO: Set only if necessary
+    ld [$FF00+c], a
+
+.CleanUp
+    ld c, b
+    pop hl
+    jr .FinishCommandLoop
+    
+
+.CheckEnvelopeCommand
+    ld b, b
+    jr .CheckNoteCommand
+
+    ; TODO: Implement!
+
+.FinishCommandLoop
+    push hl
+    ld hl, PU1MuAddress
+    ld b, 0
+    add hl, bc
+    pop de
+
+    ld a, e
+    ld [hl+], a
+    ld a, d
+    ld [hl], a
+
+    jr .CheckVibratoAndSlide
+
+
+CalculateAddress
+; Returns with the address in hl
+; c = channel no. (as UpdateChannel)
+; Modifies hl, b, and a
+    ld hl, PU1MuAddress
+    ld b, 0
+    add hl, bc
+
+    ld a, [hl+] ; LSB
+    ld b, a
+    ld a, [hl]  ; MSB
+
+    ld h, a
+    ld l, b
+    ret

@@ -1,18 +1,22 @@
 ; Special characters (must be > $E0, apart from "\\")
-charmap "\\",   $00 ; End of string. Return to code.
-charmap "~",    $FF ; Wait.
-charmap "\n",   $FE ; Newline
-charmap "\t",   $FD ; Tab (move forwards by eight pixels)
-charmap "`",    $FC ; Pause for a frame
-charmap "_`_",  $FB ; Pause for multiple frames, e.g. db "_`_",n (p = no. of frames)
-charmap "^",    $FA ; Pixel advance (move forwards by one pixel)
-charmap " ",    $F9 ; Space (move forwards by four pixels)
-charmap "§",    $F8 ; Set settings, e.g. db "_@_",s (settings byte)
-charmap "_@_",  $F4 ; Set palette, e.g. db "_@_",p,l,h (p = palette no., l = low byte, h = high byte)
-charmap "_#3_", $F3 ; Change palette to #3
-charmap "_#2_", $F2 ; Change palette to #2
-charmap "_#1_", $F1 ; Change palette to #1
-charmap "_#0_", $F0 ; Change palette to #0
+charmap "\\",    $00 ; End of string. Return to code.
+charmap "~",     $FF ; Wait.
+charmap "\n",    $FE ; Newline
+charmap "\t",    $FD ; Tab (move forwards by eight pixels)
+charmap "`",     $FC ; Pause for a frame
+charmap "_`_",   $FB ; Pause for multiple frames, e.g. db "_`_",n (p = no. of frames)
+charmap "^",     $FA ; Pixel advance (move forwards by one pixel)
+charmap "_EXEC_",$FB ; Call to executable code, e.g. db "_EXEC_",b; dw a (b = bank, a = address)
+charmap " ",     $F9 ; Space (move forwards by four pixels)
+charmap "§",     $F8 ; Set settings, e.g. db "_@_",s (settings byte)
+charmap "_@_",   $F4 ; Set palette, e.g. db "_@_",p,l,h (p = palette no., l = low byte, h = high byte)
+charmap "_#3_",  $F3 ; Change palette to #3
+charmap "_#2_",  $F2 ; Change palette to #2
+charmap "_#1_",  $F1 ; Change palette to #1
+charmap "_#0_",  $F0 ; Change palette to #0
+
+; Print variables
+charmap "_PLAYER_", $E0 ; Print player name
 
 ; Uppercase
 charmap "A", $01

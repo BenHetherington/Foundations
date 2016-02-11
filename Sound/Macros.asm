@@ -28,7 +28,7 @@
 ; tables will be in similar vain to LSDJ; still yet to implement precisely how
 
 ; Note equates
-___ EQU $00
+___ EQU $00 ; Not really a note, but will silence the channel
 C_3 EQU $01
 C#3 EQU $02
 D_3 EQU $03
@@ -146,6 +146,8 @@ __ EQU %00
 
 ; Command bytes
 ; (Numbers less than $6D are reserved for notes)
+CommandByte EQU $6D
+
 EnvelopeByte EQU $70
 WaveVolumeByte EQU $71
 TempoByte EQU $72
@@ -170,7 +172,8 @@ SoundEndByte EQU $FF
 ; Command macros
 
 note: MACRO
-    db \1, \2 ; (decide if this needs changing)
+    ; e.g. note C_3, 5
+    db \1, \2
     ENDM
 
 envelope: MACRO

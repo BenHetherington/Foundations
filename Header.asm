@@ -58,7 +58,8 @@ CurrentROMBank:  db
 
 SECTION "BankSwitch", HOME
 ROMBankSwitchLocation EQU $2000
-RAMBankSwitchLocation EQU $4000
+SRAMBankSwitchLocation EQU $4000
+WRAMBankSwitchLocation EQU $FF70
 
 CallToOtherBankFunction:
 ; assumes *c* is the requested bank - different to other functions!
@@ -105,15 +106,45 @@ JumpToOtherBank: MACRO
     jp JumpToOtherBankFunction
     ENDM
 
-SwitchROMBank:
+SwitchROMBank: MACRO
+    ld a, \1
+    SwitchROMBankFromRegister
+    ENDM
+
+SwitchROMBankFromRegister: MACRO
 ; assumes *a* is the requested bank
     ld [CurrentROMBank], a
     ld [ROMBankSwitchLocation], a
-    ret
+    ENDM
 
-SwitchRAMBank: MACRO
+PushROMBank: MACRO
+    ld a, [CurrentROMBank]
+    push af
+    ENDM
+
+PopROMBank: MACRO
+    pop af
+    SwitchROMBankFromRegister
+    ENDM
+
+SwitchSRAMBank: MACRO
     ld a, \1
-    ld [RAMBankSwitchLocation], a
+    ld [SRAMBankSwitchLocation], a
+    ENDM
+
+SwitchWRAMBank: MACRO
+    ld a, \1
+    ld [WRAMBankSwitchLocation], a
+    ENDM
+
+PushWRAMBank: MACRO
+    ld a, [WRAMBankSwitchLocation]
+    push af
+    ENDM
+
+PopWRAMBank: MACRO
+    pop af
+    ld [WRAMBankSwitchLocation], a
     ENDM
 
 KEY1 EQU $FF4D
@@ -124,34 +155,63 @@ SwitchSpeed: MACRO
     stop
     ENDM
 
-StartDMA: MACRO
+EnableDoubleSpeed: MACRO
+; Switches to double speed if we're not already in double speed mode.
+    ld a, [KEY1]
+    bit 7, a
+    jr nz, .Done\@
+.Switch\@
+    SwitchSpeed
+.Done\@
+    ENDM
+
+DisableDoubleSpeed: MACRO
+; Switches to regular speed if we're currently in double speed mode.
+    ld a, [KEY1]
+    bit 7, a
+    jr z, .Done\@
+.Switch\@
+    SwitchSpeed
+.Done\@
+    ENDM
+
+StartVRAMDMA: MACRO
 ; Assuming the DMA Wait Routine is in HRAM already
+; TODO: STOP CONFUSING OAM DMA AND VRAM DMA
 ; \1: Source, \2: Destination, \3: Length, \4: 0 = General, 1 = H-Blank
-    IF \1 & $F != 0
-    WARN "DMA Souce address's lower four bits must be 0."
-    ENDC
+    ;IF \1 & $F != 0
+    ;WARN "DMA Souce address's lower four bits must be 0."
+    ;ENDC
 
-    IF \2 & $F != 0
-    WARN "DMA Destination address's lower four bits must be 0."
-    ENDC
+    ;IF \2 & $F != 0
+    ;WARN "DMA Destination address's lower four bits must be 0."
+    ;ENDC
 
-    ld a, (\1 & $FF)
-    ld [HDMA1], a
     ld a, (\1 >> 8)
+    ld [HDMA1], a
+    ld a, (\1 & $FF)
     ld [HDMA2], a
 
-    ld a, (\2 & $FF)
-    ld [HDMA3], a
     ld a, (\2 >> 8)
+    ld [HDMA3], a
+    ld a, (\2 & $FF)
     ld [HDMA4], a
 
-    ld a, (((\3 / $10) - 1) & $7F) | (\4 & 1)
-    call DMAWait
+    ld a, (((\3 / $10) - 1) & $7F) | ((\4 & 1) << 7)
+    ld [HDMA5], a
+    ENDM
+
+WaitForVRAMDMAToFinish: MACRO
+.Loop\@
+    ld a, [HDMA5]
+    cp $FF
+    jr nz, .Loop\@
     ENDM
 
 SECTION "DMA Wait Location", HRAM
 
 SECTION "DMA Wait Subroutine", ROMX
+; TODO: Take another look at this stuff.
 DMAWaitInROM:
     ld [HDMA5], a
     ld a, $28
@@ -184,13 +244,22 @@ WaitFrames:
 EnsureVBlank:
 ; Returns immediately if in V-Blank, else returns once we're in it.
     call CheckVBlank
-    or a
     ret nz
+.CheckIfHBlankInterruptsAreEnabled
+; TODO: Check if this is needed! This is unnecessary if H-Blank interrupts are always enabled.
+    ld a, [STAT]
+    bit 3, a
+    jr z, EnsureVBlank
+.Halt
+; Wait until the H-Blank interrupt fires.
     halt
+.CheckAgain
+; Acts like a busy-wait loop if not using the interrupt.
     jr EnsureVBlank
 
 CheckVBlank:
 ; If a is non-zero, we're in V-Blank. If a is zero, we're not in V-Blank.
+; Can also just check the z flag after this returns!
     ld a, [STAT]
     bit 1, a
     jr nz, .NotInVBlank
