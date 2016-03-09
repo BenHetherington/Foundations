@@ -7,33 +7,35 @@ INCLUDE "charmap.asm"
 ; INCLUDE "lib/Pucrunch.asm"
 
 ; Hardware macros
-JOYP EQU $FF00 ; Joypad
-TMA EQU $FF06  ; Timer modulo
-TAC EQU $FF07  ; Timer control
-NR11 EQU $FF11 ; PU1 Length & Wave duty
-NR12 EQU $FF12 ; PU1 Envelope
-NR13 EQU $FF13 ; PU1 Freq low
-NR14 EQU $FF14 ; PU1 Freq high +
-NR23 EQU $FF18 ; PU2 Freq low
-NR33 EQU $FF1D ; WAV Freq low
-LCDC EQU $FF40 ; LCD Control
-STAT EQU $FF41 ; LCDC Status
-SCY EQU $FF42  ; Background Scroll Y
-SCX EQU $FF43  ; Background Scroll X
-BGP EQU $FF47  ; Original GB colour palettes
-BGPI EQU $FF68 ; Background Palette Index
-BGPD EQU $FF69 ; Background Palette Data
-OBPI EQU $FF6A ; Sprite Palette Index
-OBPD EQU $FF6B ; Sprite Palette Data
-WY EQU $FF4A   ; Window Scroll Y
-WX EQU $FF4B   ; Window Scroll X - 7
-VBK EQU $FF4F  ; VRAM Bank Select
-HDMA1 EQU $FF51; DMA Source (High)
-HDMA2 EQU $FF52; DMA Source (Low)
-HDMA3 EQU $FF53; DMA Destination (High)
-HDMA4 EQU $FF54; DMA Destination (Low)
-HDMA5 EQU $FF55; DMA Mode/Length/Start
-IE EQU $FFFF   ; Interrupts
+JOYP  EQU $FF00 ; Joypad
+TMA   EQU $FF06 ; Timer modulo
+TAC   EQU $FF07 ; Timer control
+NR11  EQU $FF11 ; PU1 Length & Wave duty
+NR12  EQU $FF12 ; PU1 Envelope
+NR13  EQU $FF13 ; PU1 Freq low
+NR14  EQU $FF14 ; PU1 Freq high +
+NR23  EQU $FF18 ; PU2 Freq low
+NR33  EQU $FF1D ; WAV Freq low
+LCDC  EQU $FF40 ; LCD Control
+STAT  EQU $FF41 ; LCDC Status
+SCY   EQU $FF42 ; Background Scroll Y
+SCX   EQU $FF43 ; Background Scroll X
+LY    EQU $FF44 ; LY
+LYC   EQU $FF45 ; LY Compare
+BGP   EQU $FF47 ; Original GB colour palettes
+BGPI  EQU $FF68 ; Background Palette Index
+BGPD  EQU $FF69 ; Background Palette Data
+OBPI  EQU $FF6A ; Sprite Palette Index
+OBPD  EQU $FF6B ; Sprite Palette Data
+WY    EQU $FF4A ; Window Scroll Y
+WX    EQU $FF4B ; Window Scroll X - 7
+VBK   EQU $FF4F ; VRAM Bank Select
+HDMA1 EQU $FF51 ; DMA Source (High)
+HDMA2 EQU $FF52 ; DMA Source (Low)
+HDMA3 EQU $FF53 ; DMA Destination (High)
+HDMA4 EQU $FF54 ; DMA Destination (Low)
+HDMA5 EQU $FF55 ; DMA Mode/Length/Start
+IE    EQU $FFFF ; Interrupts
 
 INCLUDE "Header.asm"
 
@@ -43,6 +45,7 @@ PlayingOnGBA: db
 ResetDisallowed: db
 TempAnimFrame: db
 TempAnimWait: db
+
 
 SECTION "Stack Space", WRAM0[$CF80]
 StackSize EQU $80
@@ -91,15 +94,15 @@ GameStartup:
 ; Set up timer
     ld [TMA], a ; Reset the timer modulo value
 
-    ld a, %100 ; 4096 Hz timer, interrupts at 16 Hz. Could be subject to change!
+    ld a, %100  ; 4096 Hz timer, interrupts at 16 Hz. Could be subject to change!
     ld [TAC], a
 
 ; Enable the correct interrupts
-    ld a, %00001000 ; Requesting H-Blank interrupt only.
+    ld a, %01000000 ; Requesting LYC interrupt only.
     ld [STAT], a
 
     ld a, %00000111 ; Timer, H-Blank (LCD STAT), V-Blank
-    ld [IE], a ; TODO: Add serial to this to add link capablilities?
+    ld [IE], a      ; TODO: Add serial to this to add link capablilities?
 
     call InitSoundEngine
 
@@ -112,8 +115,7 @@ GameStartup:
     ld a, 1
     ld [ResetDisallowed], a
 
-    ld a, $0A
-    ld [$0000], a
+    EnableSRAM
 
     ld a, [$A000]
     ld c, a
@@ -127,8 +129,7 @@ GameStartup:
     ld a, c
     ld [$A000], a
 
-    xor a
-    ld [$0000], a
+    DisableSRAM
     ld [ResetDisallowed], a
 
     ld a, b
@@ -182,6 +183,9 @@ GameStartup:
 
     call CloseTextBox
     call FastFadeToBlack
+    
+    xor a
+    call PlayMusic
 
     DisableDoubleSpeed
 
@@ -207,8 +211,8 @@ GameStartup:
     call ShowTextBox
 
     ld hl, FakeRPGTextB
-    call PrintString
-    jr .FillerHalt
+    ; call PrintString
+    ; jr .FillerHalt
 
 ;    SwitchSpeed
     ld hl, FakeRPGText
@@ -230,10 +234,8 @@ GameStartup:
 WipeSaveData:
     ld a, $01
     ld [VBK], a
-    ld [ResetDisallowed], a
 
-    ld a, $0A
-    ld [$0000], a
+    EnableSRAM
 
     ld b, 15 ; Number of banks
 .OuterSaveLoop
@@ -252,9 +254,7 @@ WipeSaveData:
     cp $FF
     jr nz, .OuterSaveLoop
 
-    xor a
-    ld [$0000], a
-    ld [ResetDisallowed], a
+    DisableSRAM
     ret
 
 WarningString:
@@ -276,7 +276,7 @@ FakeRPGTextB:
 FakeRPGText:
     db "What now?\n"
     db "§", %111, "_@_", 1, $00, $00, "_@_", 2, $00, $00, "_#2_" ; Setting max speed, no SFX, black colours
-    db "\t", "Fight", "\t^_#1_ ", "Magic",  "\t\t ", "Taunt\n"
+    db "^_right_^^", "Fight", "\t^_#1_ ", "Magic",  "\t\t ", "Taunt\n"
     db "\t", "Item",  "\t^^ ",    "Tattle", "\t ",   "Run Away", "§", 0, "\\"
 
 FakeQuicksaveText:
@@ -520,7 +520,11 @@ VBlankHandler:
 
     ld a, [JOYP]
     and a, %00001111
-    jp z, GameStartup
+    jr nz, .SetVBlankOccuredFlag
+
+.Reset
+    SwitchROMBank BANK(GameStartup)
+    jp GameStartup
 
 .SetVBlankOccuredFlag
     xor a
@@ -581,6 +585,44 @@ TempAnim:
 .Next
     ld [TempAnimFrame], a
     jp ReplaceLastTile
+
+HBlankHandler:
+    push af
+    push bc
+
+.Loop
+    ld a, [STAT]
+    bit 1, a
+    jr nz, .Loop
+
+    ld a, [BGPI]
+    ld b, a
+
+    xor a
+    ld [BGPI], a
+    ld a, [LY]
+    ld c, a
+    srl a
+    srl a
+    srl a
+    ld [BGPD], a
+
+    ld a, b
+    ld [BGPI], a
+
+    ld a, c
+    add a, 8
+    cp $90
+    jr c, .Continue
+
+.Overflow
+    xor a
+
+.Continue
+    ld [LYC], a
+    pop bc
+    pop af
+    reti
 
 SECTION "VerifyChecksums", ROM0
 
@@ -664,13 +706,27 @@ VerifyChecksum:
     ret
 
 SECTION "TempSong", ROMX[$6000]
+TempSong:
+    tempo 16
 REPT 100
-    db C_4
-    db E_4
-    db B_4
-    db D_5
-    db C_5
-    db E_5
-    db B_5
-    db D_6
+    note C_4, 2
+    note E_4, 2
+    note B_4, 3
+    note D_5, 1
+    note C_5, 2
+    note E_5, 2
+    note B_5, 3
+    note D_6, 1
+ENDR
+
+TempSongPU2:
+REPT 100
+    note D_6, 2
+    note C_4, 2
+    note E_4, 3
+    note B_4, 1
+    note D_5, 2
+    note C_5, 2
+    note E_5, 3
+    note B_5, 1
 ENDR

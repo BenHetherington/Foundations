@@ -21,14 +21,24 @@
 		B599ADD11C4182CE005C2B67 /* FrequencyTable */ = {isa = PBXFileReference; lastKnownFileType = file; path = FrequencyTable; sourceTree = "<group>"; };
 		B599ADD21C4182CE005C2B67 /* Macros.asm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.asm.asm; path = Macros.asm; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.asm.ppc; };
 		B599ADD31C4182CE005C2B67 /* StringPrint.asm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.asm.asm; path = StringPrint.asm; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.asm.ppc; };
+		B5BE2CD31C6E3FC800A0F391 /* MusicPointers.asm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.asm.asm; path = MusicPointers.asm; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.asm.ppc; };
+		B5BE2CD41C6E4C6C00A0F391 /* Subroutines.asm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.asm.asm; path = Subroutines.asm; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.asm.ppc; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
+		B5520BD51C6F95A1004B4575 /* Music */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			path = Music;
+			sourceTree = "<group>";
+		};
 		B599ADBA1C4181CF005C2B67 = {
 			isa = PBXGroup;
 			children = (
 				B567B9451C41AAC700848073 /* build.sh */,
 				B599ADC51C4182CE005C2B67 /* BoxTest.asm */,
+				B5BE2CD41C6E4C6C00A0F391 /* Subroutines.asm */,
 				B599ADC61C4182CE005C2B67 /* charmap.asm */,
 				B599ADC71C4182CE005C2B67 /* Header.asm */,
 				B599ADC81C4182CE005C2B67 /* IncompatibleGB.asm */,
@@ -53,7 +63,9 @@
 		B599ADCF1C4182CE005C2B67 /* Sound */ = {
 			isa = PBXGroup;
 			children = (
+				B5520BD51C6F95A1004B4575 /* Music */,
 				B599ADD01C4182CE005C2B67 /* Engine.asm */,
+				B5BE2CD31C6E3FC800A0F391 /* MusicPointers.asm */,
 				B599ADD11C4182CE005C2B67 /* FrequencyTable */,
 				B599ADD21C4182CE005C2B67 /* Macros.asm */,
 			);

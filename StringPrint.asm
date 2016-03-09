@@ -2,6 +2,7 @@ SECTION "Text Box Variables", WRAMX
 ; Current position, for knowing where to put the next character.
 TextTilesPointer: dw         ; The address of the tile to start at.
                              ; Stored big-endian (just because)
+                             ; TODO: Make this little-endian for consistency?
 TextSubtilesPositionX: db    ; The number of pixels across within a tile.
 TextSubtilesPositionY: db    ; The number of pixels down within a tile.
 TextTilesPositionY: db       ; The number of tiles down.

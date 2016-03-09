@@ -1,6 +1,8 @@
 INCLUDE "Sound/Macros.asm"
 INCLUDE "lib/AddSub1.inc"
 
+INCLUDE "Sound/MusicPointers.asm"
+
 SECTION "SoundVariables", WRAMX
 ; Must define some important sound-y variables
 
@@ -106,7 +108,7 @@ PU2SlideOrVibratoAmount: db
 WAVSlideOrVibratoAmount: db
 NOISlideOrVibratoAmount: db
 
-SoundVariableBytes EQU 66
+SoundVariableBytes EQU 86
 
 SECTION "SoundEngine", ROM0
 FrequencyTable:
@@ -118,7 +120,7 @@ InitSoundEngine::
 
     xor a
     ld b, SoundVariableBytes
-    ld hl, PU1MuWait
+    ld hl, MuTempo
 .Loop
     ld [hl+], a
     dec b
@@ -129,6 +131,71 @@ InitSoundEngine::
 
 PlayMusic::
 ; TODO: Start playing some sweet music
+; Assume that a contains the song to be played
+    push hl
+    push bc
+
+    ld hl, MusicPointers
+    ld c, a
+    ld b, 0
+
+    sla16 bc, 3
+    add a, c
+    jr nc, .Continue
+
+.Carry
+    inc b
+
+.Continue
+    ld c, a
+    add hl, bc ; hl now contains the address to the song data
+
+    PushROMBank
+    SwitchROMBank BANK(MusicPointers)
+
+    PushWRAMBank
+    SwitchWRAMBank BANK(MuAddressBank)
+
+.GetBank
+    ld a, [hl+]
+    ld [MuAddressBank], a
+
+.PU1
+    ld a, [hl+]
+    ld [PU1MuAddress], a
+    ld a, [hl+]
+    ld [PU1MuAddress + 1], a
+
+.PU2
+    ld a, [hl+]
+    ld [PU2MuAddress], a
+    ld a, [hl+]
+    ld [PU2MuAddress + 1], a
+
+.WAV
+    ld a, [hl+]
+    ld [WAVMuAddress], a
+    ld a, [hl+]
+    ld [WAVMuAddress + 1], a
+
+.NOI
+    ld a, [hl+]
+    ld [NOIMuAddress], a
+    ld a, [hl]
+    ld [NOIMuAddress + 1], a
+
+.CleanUp
+    ld a, 1
+    ld [MuCounter], a
+    ld [PU1MuWait], a
+    ld [PU2MuWait], a
+    ld [WAVMuWait], a
+    ld [NOIMuWait], a
+
+    PopWRAMBank
+    PopROMBank
+    pop bc
+    pop hl
     ret
 
 PlaySFX::
@@ -225,7 +292,16 @@ UpdateChannel
 .CheckCounter
     ld b, a
     or a
+    jr nz, .CheckVibratoAndSlide
+
+    ld hl, PU1MuWait
+    ld b, 0
+    add hl, bc
+
+    ld a, [hl]
+    dec a
     jr z, .GetNextCommand
+    ld [hl], a
 
 .CheckVibratoAndSlide
     ; TODO: Implement
@@ -249,9 +325,9 @@ UpdateChannel
 
 .NoteCommand
     ; TODO: Deal with $00
+    ; TODO: Transpose the note as necessary
     push hl
     ld hl, FrequencyTable - 2
-    ld b, b
 
     ld d, 0
     ld e, a
@@ -304,17 +380,56 @@ UpdateChannel
 .CleanUp
     ld c, b
     pop hl
+
+    ld a, [hl+]
+
+    push hl
+    ld hl, PU1MuWait
+    ld b, 0
+    add hl, bc
+
+    ld [hl], a
+    pop hl
+
     jr .FinishCommandLoop
     
 
 .CheckEnvelopeCommand
-    ld b, b
-    jr .CheckNoteCommand
+    ;ld b, b
+    ;jr .CheckNoteCommand
 
     ; TODO: Implement!
 
+
+.CheckTempoCommand
+    cp TempoByte
+    jr nz, .CheckNoteCommand
+
+.Tempo
+    bit 2, a
+    jr nz, .FXTempo
+
+.MuTempo
+    ld a, [hl+]
+    ld [MuTempo], a
+    ld [MuCounter], a
+    jr .GetNextCommandLoop
+
+.FXTempo
+    ld a, [hl+]
+    ld [FXTempo], a
+    ld [FXCounter], a
+    jr .GetNextCommandLoop
+
+
+.CheckTableCommand
+    ld b, b
+    jr .CheckNoteCommand
+    ; cp TableByte
+    ; jr nz, .CheckNoteCommand
+
 .FinishCommandLoop
-    push hl
+    push hl             ; Writing the new address into memory
     ld hl, PU1MuAddress
     ld b, 0
     add hl, bc
