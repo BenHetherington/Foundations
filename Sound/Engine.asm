@@ -3,7 +3,7 @@ INCLUDE "lib/AddSub1.inc"
 
 INCLUDE "Sound/MusicPointers.asm"
 
-SECTION "SoundVariables", WRAMX
+SECTION "SoundVariables", WRAM0
 ; Must define some important sound-y variables
 
 MuTempo: db
@@ -115,8 +115,10 @@ FrequencyTable:
     INCBIN "Sound/FrequencyTable"
 
 InitSoundEngine::
-    PushWRAMBank
-    SwitchWRAMBank BANK(MuTempo)
+    ;PushWRAMBank
+    ;SwitchWRAMBank BANK(MuTempo)
+
+    ; TODO: Replace with generic memory-clearing function
 
     xor a
     ld b, SoundVariableBytes
@@ -126,7 +128,7 @@ InitSoundEngine::
     dec b
     jr nz, .Loop
 
-    PopWRAMBank
+    ; PopWRAMBank
     ret
 
 PlayMusic::
@@ -153,8 +155,10 @@ PlayMusic::
     PushROMBank
     SwitchROMBank BANK(MusicPointers)
 
-    PushWRAMBank
-    SwitchWRAMBank BANK(MuAddressBank)
+    ;PushWRAMBank
+    ;SwitchWRAMBank BANK(MuAddressBank)
+
+    ; TODO: Use a generic memory-copying subroutine, if possible
 
 .GetBank
     ld a, [hl+]
@@ -192,7 +196,7 @@ PlayMusic::
     ld [WAVMuWait], a
     ld [NOIMuWait], a
 
-    PopWRAMBank
+    ; PopWRAMBank
     PopROMBank
     pop bc
     pop hl
@@ -205,8 +209,8 @@ PlaySFX::
 SoundEngineUpdate::
 ; Updates the music and FX into the next frame.
 ; Assume that all registers are destroyed after the call.
-    PushWRAMBank
-    SwitchWRAMBank BANK(MuTempo)
+    ;PushWRAMBank
+    ;SwitchWRAMBank BANK(MuTempo)
     PushROMBank
 
 CheckIfMusicIsActive
@@ -221,16 +225,15 @@ CheckIfSFXIsActive
     
 FinishSoundEngineUpdate
     PopROMBank
-    PopWRAMBank
+    ; PopWRAMBank
     ret
 
 
 UpdateMusic
     SwitchROMBank [MuAddressBank]
 
-    ld a, [MuCounter]
-    dec a
-    ld [MuCounter], a
+    ld hl, MuCounter
+    dec [hl]
     jr nz, CheckIfSFXIsActive
 
     ld a, [MuTempo]
@@ -256,8 +259,9 @@ UpdateMusic
 .ContinueLoop
     inc hl
     inc c
+    inc c
     ld a, c
-    cp 4
+    cp 8
     jr nz, .ChannelLoop
 
 
@@ -266,9 +270,8 @@ UpdateMusic
 UpdateSFX
     SwitchROMBank [FXAddressBank]
 
-    ld a, [FXCounter]
-    dec a
-    ld [FXCounter], a
+    ld hl, FXCounter
+    dec [hl]
     jr nz, FinishSoundEngineUpdate
     ld b, a
 
@@ -287,7 +290,7 @@ UpdateChannel
     push hl
     push bc
 
-    ; TODO: Implement!
+    ; TODO: Reimplement using vector table
 
 .CheckCounter
     ld b, a
@@ -298,10 +301,8 @@ UpdateChannel
     ld b, 0
     add hl, bc
 
-    ld a, [hl]
-    dec a
+    dec [hl]
     jr z, .GetNextCommand
-    ld [hl], a
 
 .CheckVibratoAndSlide
     ; TODO: Implement
@@ -335,6 +336,7 @@ UpdateChannel
     add hl, de
 
 ; Putting the frequency into de
+; TODO: Replace with 16-bit copy
     ld a, [hl+]
     ld e, a
     ld a, [hl]
@@ -381,6 +383,7 @@ UpdateChannel
     ld c, b
     pop hl
 
+.GetLength
     ld a, [hl+]
 
     push hl
@@ -432,7 +435,9 @@ UpdateChannel
     push hl             ; Writing the new address into memory
     ld hl, PU1MuAddress
     ld b, 0
+    sla c
     add hl, bc
+    srl c
     pop de
 
     ld a, e
@@ -449,7 +454,9 @@ CalculateAddress
 ; Modifies hl, b, and a
     ld hl, PU1MuAddress
     ld b, 0
+    sla c
     add hl, bc
+    srl c
 
     ld a, [hl+] ; LSB
     ld b, a

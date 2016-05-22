@@ -7,11 +7,6 @@ IncompatibleGBText:
     db "\t\t\t^Original Game Boy.\\"
 
 IncompatibleGB:
-    ld a, %00000001
-    ;ld [ResetDisallowed], a
-    ld [IE], a ; Enable VBlank interrupt
-    ei
-
 ; Play sound #1
     ld a, $0D ; envelope
     ld [NR12], a
@@ -19,14 +14,13 @@ IncompatibleGB:
     ld [NR14], a
 
 ; Slide out the Nintendo logo
+    ld hl, SCX
     ld b, 3
 .OuterLoop
     ld c, 4
 .InnerLoop
-    call WaitFrame
-    ld a, [SCX]
-    dec a
-    ld [SCX], a
+    call BusyWaitFrame
+    dec [hl]
     dec c
     jr nz, .InnerLoop
 
@@ -38,7 +32,7 @@ IncompatibleGB:
 
 
 IncompatibleGBPrint
-    call WaitFrame
+    call BusyWaitFrame
     ld [LCDC], a ; As a should be $00 at this point
 
     ld a, 12 ; Get the scrolling ready in advance
@@ -51,8 +45,10 @@ IncompatibleGBPrint
 
 .SetMapLayout
     call EnsureVBlank
+    ; TODO: Replace with standard copying subroutine
+
     ld hl, $9800 + $E1
-    ld a, 1
+    ld a, TileID + 1
     ld b, 5
     ld c, 18
     ld de, 14
@@ -78,17 +74,16 @@ IncompatibleGBSlideIn
     ld [NR14], a
 
 ; Slide in the new message
-    ld a, %10010001
+    ld a, %10000001
     ld [LCDC], a
 
+    ld hl, SCX
     ld b, 3
 .OuterLoop
     ld c, 4
 .InnerLoop
-    call WaitFrame
-    ld a, [SCX]
-    dec a
-    ld [SCX], a
+    call BusyWaitFrame
+    dec [hl]
     dec c
     jr nz, .InnerLoop
 
@@ -98,9 +93,21 @@ IncompatibleGBSlideIn
     dec b
     jr nz, .OuterLoop
 
-    di
+.LockUp
+    jr .LockUp
 
-.HaltLoop
-; Lock up the GB
-    halt
-    jr .HaltLoop
+BusyWaitFrame:
+    push af
+
+.Loop1
+    ld a, [LY]
+    cp $90
+    jr nz, .Loop1
+
+.Loop2
+    ld a, [LY]
+    cp $91
+    jr nz, .Loop2
+
+    pop af
+    ret

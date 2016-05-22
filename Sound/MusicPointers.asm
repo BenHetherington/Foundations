@@ -1,3 +1,6 @@
+INCLUDE "Sound/Music/TempSong.asm"
+INCLUDE "Sound/Music/AzeleaTownTest.asm"
+
 SECTION "Music Pointers",ROMX
 
 ; Contains pointers to the music data for each channel.
@@ -13,21 +16,29 @@ SECTION "Music Pointers",ROMX
 NO_DATA EQU $0000
 
 MusicPointers::
-.TestSong
-    ; ID = 0
-    ; A test song, for sound engine development purposes
-    db $01      ; Bank
-    dw TempSong ; PU1
-    dw TempSongPU2  ; PU2
-    dw NO_DATA  ; WAV
-    dw NO_DATA  ; NOI
-
 .NullSong
-    ; ID = 1
+    ; ID = 00
     ; A test song, which stops playback
     db $00     ; Bank
     dw NO_DATA ; PU1
     dw NO_DATA ; PU2
     dw NO_DATA ; WAV
     dw NO_DATA ; NOI
+
+.TempSong
+    ; TODO: Delete this!
+    db BANK(AzeleaTownTestPU1)
+    dw AzeleaTownTestPU1
+    dw NO_DATA
+    dw NO_DATA
+    dw NO_DATA
+
+.TestSong
+    ; ID = 01
+    ; A test song, for sound engine development purposes
+    db BANK(TempSong)   ; Bank
+    dw TempSong         ; PU1
+    dw TempSongPU2      ; PU2
+    dw TempSongWAV      ; WAV
+    dw NO_DATA          ; NOI
     

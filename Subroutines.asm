@@ -1,7 +1,7 @@
-SECTION "BankSwitchData", WRAM0
+SECTION "BankSwitchData", HRAM
 CurrentROMBank:  db
 
-SECTION "BankSwitch", HOME
+SECTION "BankSwitch", ROM0
 SRAMEnableLocation EQU $0000
 ROMBankSwitchLocation EQU $2000
 SRAMBankSwitchLocation EQU $4000
@@ -12,11 +12,11 @@ CallToOtherBankFunction:
 ; assumes hl is the address required within said bank
 ; use b and de to pass data there, and bc, de, and hl to pass data back
 ; requires 6 bytes of stack space for each inter-bank call.
-    ld a, [CurrentROMBank]
+    ldh a, [CurrentROMBank]
     push af
     ld a, c
 
-    ld [CurrentROMBank], a
+    ldh [CurrentROMBank], a
     ld [ROMBankSwitchLocation], a
 
 ; Simulate a call
@@ -27,10 +27,11 @@ CallToOtherBankFunction:
     jp hl
 .Return
     pop af
-    ld [CurrentROMBank], a
+    ldh [CurrentROMBank], a
 
     ld [ROMBankSwitchLocation], a
     ret
+
 
 CallToOtherBank: MACRO
     ld c, BANK(\1)
@@ -38,13 +39,15 @@ CallToOtherBank: MACRO
     call CallToOtherBankFunction
     ENDM
 
+
 JumpToOtherBankFunction:
 ; assumes *a* is the requested bank
 ; assumes hl is the address required within said bank
 ; use bc and de to pass data there
-    ld [CurrentROMBank], a
+    ldh [CurrentROMBank], a
     ld [ROMBankSwitchLocation], a
     jp hl
+
 
 JumpToOtherBank: MACRO
     ld a, BANK(\1)
@@ -52,26 +55,31 @@ JumpToOtherBank: MACRO
     jp JumpToOtherBankFunction
     ENDM
 
+
 SwitchROMBank: MACRO
     ld a, \1
     SwitchROMBankFromRegister
     ENDM
 
+
 SwitchROMBankFromRegister: MACRO
 ; assumes *a* is the requested bank
-    ld [CurrentROMBank], a
+    ldh [CurrentROMBank], a
     ld [ROMBankSwitchLocation], a
     ENDM
 
+
 PushROMBank: MACRO
-    ld a, [CurrentROMBank]
+    ldh a, [CurrentROMBank]
     push af
     ENDM
+
 
 PopROMBank: MACRO
     pop af
     SwitchROMBankFromRegister
     ENDM
+
 
 EnableSRAM: MACRO
     ld a, $0A
@@ -79,31 +87,37 @@ EnableSRAM: MACRO
     ld [SRAMEnableLocation], a
     ENDM
 
+
 DisableSRAM: MACRO
     xor a
     ld [SRAMEnableLocation], a
     ld [ResetDisallowed], a
     ENDM
 
+
 SwitchSRAMBank: MACRO
     ld a, \1
     ld [SRAMBankSwitchLocation], a
     ENDM
+
 
 SwitchWRAMBank: MACRO
     ld a, \1
     ld [WRAMBankSwitchLocation], a
     ENDM
 
+
 PushWRAMBank: MACRO
     ld a, [WRAMBankSwitchLocation]
     push af
     ENDM
 
+
 PopWRAMBank: MACRO
     pop af
     ld [WRAMBankSwitchLocation], a
     ENDM
+
 
 SECTION "GBC Subroutines", ROM0
 
@@ -135,9 +149,9 @@ DisableDoubleSpeed: MACRO
 .Done\@
     ENDM
 
+
 StartVRAMDMA: MACRO
 ; Assuming the DMA Wait Routine is in HRAM already
-; TODO: STOP CONFUSING OAM DMA AND VRAM DMA
 ; \1: Source, \2: Destination, \3: Length, \4: 0 = General, 1 = H-Blank
     ;IF \1 & $F != 0
     ;WARN "DMA Souce address's lower four bits must be 0."
@@ -161,6 +175,7 @@ StartVRAMDMA: MACRO
     ld [HDMA5], a
     ENDM
 
+
 WaitForVRAMDMAToFinish: MACRO
 .Loop\@
     ld a, [HDMA5]
@@ -168,28 +183,38 @@ WaitForVRAMDMAToFinish: MACRO
     jr nz, .Loop\@
     ENDM
 
-SECTION "DMA Wait Location", HRAM
 
-SECTION "DMA Wait Subroutine", ROMX
-; TODO: Take another look at this stuff.
-DMAWaitInROM:
-    ld [HDMA5], a
+StartOAMDMA: MACRO
+    di
+    ld a, \1 >> 8
+    call OAMDMAWait
+    ei
+    ENDM
+
+
+SECTION "DMA Wait Location", HRAM
+OAMDMAWait:: ds 8
+
+
+SECTION "DMA Wait Subroutine", ROM0
+DMAWaitInROM::
+    ld [ODMA], a
     ld a, $28
 .Wait
     dec a
     jr nz, .Wait
+    ret
 
 
 
-SECTION "Graphics Subroutines", HOME
+SECTION "Graphics Subroutines", ROM0
 WaitFrame:
 ; Returns after the next V-Blank begins, and the interrupt is finished.
     ld a, 1
-    ld [VBlankOccurred], a
-    ei
+    ldh [VBlankOccurred], a
 .Wait
     halt
-    ld a, [VBlankOccurred]
+    ldh a, [VBlankOccurred]
     and a
     jr nz, .Wait
     ret
@@ -202,20 +227,26 @@ WaitFrames:
     ret
 
 EnsureVBlank:
-; Returns immediately if in V-Blank, else returns once we're in it.
-    call CheckVBlank
-    ret nz
-.CheckIfHBlankInterruptsAreEnabled
-; TODO: Check if this is needed! This is unnecessary if H-Blank interrupts are always enabled.
     ld a, [STAT]
-    bit 3, a
-    jr z, EnsureVBlank
-.Halt
-; Wait until the H-Blank interrupt fires.
-    halt
-.CheckAgain
-; Acts like a busy-wait loop if not using the interrupt.
+    bit 1, a
+    ret z
     jr EnsureVBlank
+
+;EnsureVBlank:
+;; Returns immediately if in V-Blank, else returns once we're in it.
+;    call CheckVBlank
+;    ret nz
+;;.CheckIfHBlankInterruptsAreEnabled
+;;; TODO: Check if this is needed! This is unnecessary if H-Blank interrupts are always enabled.
+;;    ld a, [STAT]
+;;    bit 3, a
+;;    jr z, EnsureVBlank
+;;.Halt
+;;; Wait until the H-Blank interrupt fires.
+;;    halt
+;.CheckAgain
+;; Acts like a busy-wait loop if not using the interrupt.
+;    jr EnsureVBlank
 
 CheckVBlank:
 ; If a is non-zero, we're in V-Blank. If a is zero, we're not in V-Blank.
@@ -223,6 +254,9 @@ CheckVBlank:
     ld a, [STAT]
     bit 1, a
     jr nz, .NotInVBlank
+    ;and a, %11
+    ;dec a
+    ;jr z, .NotInVBlank
 .InVBlank
     inc a ; returns 1 if in H-Blank, 2 if in V-Blank
     ret
@@ -230,17 +264,64 @@ CheckVBlank:
     xor a
     ret
 
+SECTION "RNG Seed", HRAM
+RNGSeed: dw
 
-SECTION "Random Number Generator", HOME
-Random:
-; Generates an 8-bit pseudorandom number (in a)
-; Relies on the divider
-; TODO: Write this!
+SECTION "Random Number Generator", ROM0
+Random::
+Xorshift::
+; Generates an 8-bit psuedorandom number
+; An 8-bit implementation of an xorshift PRNG with a period of 2^16 - 1
+; Uses parameters a = 7, b = 6, c = 1 in the algorithm
+    push bc
+    ldh a, [RNGSeed + 1] ; x
+
+; t ^= (t << 7)
+    ld b, a
+    rrca
+    and %10000000
+    xor a, b
+
+; t ^= (t >> 6)
+    ld b, a
+    swap a
+    rrca
+    rrca
+    and %00000011
+    xor a, b
+
+; x = y
+    ld c, a
+    ldh a, [RNGSeed] ; y
+    ldh [RNGSeed + 1], a ; x = y
+
+; y ^= (y >> 1)
+    ld b, a
+    srl a
+    xor a, b
+
+; y ^= t
+    xor a, c
+    ldh [RNGSeed], a ; y
+
+    pop bc
     ret
 
-RandNum:
+
+SeedRNG::
+; Expects a suitable seed in a, which is used for the 'x' byte
+; The divider is used for the 'y' byte
+    ldh [RNGSeed + 1], a
+    ld a, [DIVI]
+    ldh [RNGSeed], a
+    ret
+
+
+Rand:
 ; Generates a random number between 0-c.
-    call Random
+; TODO: Write
+    call Xorshift
+    dec a
     ret
 
 
@@ -279,6 +360,7 @@ WordMultiply::
     jr nz, .Loop ; Continue processing the rest of the bits
     ret
 
+
 Multiply::
     ; Multiplies two 8-bit numbers, stopping early if possible.
     ; Returns the result in hl
@@ -307,6 +389,7 @@ Multiply::
     jr nz, .Loop
     ret
 
+
 SmallMultiply::
 ; Multiplies two 8-bit numbers, returning the result in an 8-bit number
 ; Uses less registers, and stops early if possible.
@@ -332,4 +415,72 @@ SmallMultiply::
     dec c
     jr nz, .Loop
     ret
+
+
+SECTION "Memory Copying", ROM0
+
+MemCopyRoutine::
+; Copies a memory region. Adpated from Jeff Frohwein's memory.asm
+; hl = source, de = destination, bc = byte count
+.loop
+    ld a,[hl+]
+	ld [de],a
+	inc de
+
+.skip
+    dec c
+	jr nz, .loop
+	dec b
+	jr nz, .loop
+	ret
+
+SmallMemCopyRoutine::
+; hl = source, de = destination, b = byte count
+.Loop
+    ld a, [hl+]
+    ld [de], a
+    inc de
+
+    dec b
+    jr nz, .Loop
+    ret
+
+MemCopy: MACRO
+; A wrapper for the MemCopyRoutine
+; \1 = source, \2 = destination, \3 = byte count
+    ld hl, \1
+    ld de, \2
+
+IF \3 == 0
+    WARN "Invalid parameter: Bytes must be greater than 0."
+ENDC
+
+IF \3 > $FF
+    ld bc, \3
+    call MemCopyRoutine
+ENDC
+
+IF \3 < $100
+    ld b, \3
+    call SmallMemCopyRoutine
+ENDC
+    ENDM
+
+MemCopyFixedDestRoutine::
+.Loop
+    call EnsureVBlank
+    ld a, [hl+]
+    ld [$FF00+c], a
+
+    dec b
+    jr nz, .Loop
+    ret
+
+MemCopyFixedDest: MACRO
+; \1 = source, \2 = destination (fixed), \3 = byte count
+    ld hl, \1
+    ld c, (\2 & $FF)
+    ld b, \3
+    call MemCopyFixedDestRoutine
+    ENDM
 

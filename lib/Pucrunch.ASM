@@ -1,4 +1,4 @@
-INCLUDE "16-bit Macros.inc"
+INCLUDE "lib/16-bit Macros.inc"
 
 ;*
 ;*
@@ -11,7 +11,8 @@ INCLUDE "16-bit Macros.inc"
 ;*  V1.1 - Various optimizations, 23-Jul-99
 ;*  V1.2 - Even more optimizations, 23-Jul-99
 ;*  V1.3 - Fixed a bug in the code. 256 byte copy didn't work. 24-Feb-00
-;*  This version is slightly modified, to eliminate the unused bytes in the header.
+;*
+;*  This version is slightly modified, to work with a 15-byte table, and to eliminate the unused bytes in the header.
 ;*
 ;* Note: If you unpack to VRAM than the screen needs to be
 ;* turned off because no checks for VRAM available are made.
@@ -23,7 +24,7 @@ INCLUDE "16-bit Macros.inc"
 ; db maxGamma + 1
 ; db (1<<maxGamma); /* Short/Long RLE */
 ; db extraLZPosBits;
-; db rleUsed (31)  ;needed
+; db rleUsed (15)  ;needed
 ; ds rleUsed
 ;  ....data....
 
@@ -31,12 +32,8 @@ INCLUDE "16-bit Macros.inc"
 
 SECTION "Pucrunch Vars",WRAM0
 
-;bitstr          db
 escPu           db
-;InPtr           dw
 OutPtr          dw
-;regx            db
-;regy            db
 lzpos           dw
 EscBits         db
 Esc8Bits        db
@@ -45,7 +42,7 @@ Max1Gamma       db
 Max2Gamma       db
 Max8Gamma       db
 ExtraBits       db
-tablePu         ds      31
+tablePu         ds      15
 
 
 SECTION "Pucrunch High Vars",HRAM
@@ -66,18 +63,12 @@ SECTION "Pucrunch", HOME
 ;        DE = Destination for unpacked data
 
 Unpack:
-    ld16r   OutPtr,de
+    ld16a   OutPtr, de
 
 ; Read the file header & setup variables
 
-    ;ld      bc,6
-    ;add     hl,bc
-
     ld      a,[hl+]
     ld      [escPu],a
-
-    ;inc     hl
-    ;inc     hl
 
     ld      a,[hl+]
     ld      [EscBits],a
@@ -104,15 +95,12 @@ Unpack:
     ld      a,[hl+]
     ld      [ExtraBits],a
 
-    ;inc     hl
-    ;inc     hl
-
     ld      a,[hl+]
     ld      b,a
 
     ld      de,tablePu
 
-; Copy the RLE table (maximum of 31 bytes) to RAM
+; Copy the RLE table (maximum of 15 bytes) to RAM
 
     inc     b
     srl     b
@@ -131,10 +119,7 @@ Unpack:
     dec     b
     jr      nz,.rleloop
 
-
-
     ld      d,$80
-
     jr      .main
 
 
@@ -142,7 +127,7 @@ Unpack:
     ld      b,a
 
     ld      a,[escPu]
-    ld      [regy],a
+    ldh     [regy],a
 
     ld      a,[EscBits]
     ld      e,a
@@ -155,7 +140,7 @@ Unpack:
 
     ld      [escPu],a
 
-    ld      a,[regy]
+    ldh     a,[regy]
 
     ; Fall through and get the rest of the bits.
 
@@ -173,10 +158,10 @@ Unpack:
 
 ; Write out the escaped/normal byte
 
-    ld16    bc,OutPtr
+    ld16r   bc,OutPtr
     ld      [bc],a
     inc     bc
-    ld16r   OutPtr,bc
+    ld16a   OutPtr, bc
 
    ; Fall through and check the escape bits again
 
@@ -185,7 +170,7 @@ Unpack:
     ld      e,a
 
     xor     a               ; A = 0
-    ld      [regy],a
+    ldh     [regy],a
 
     inc     e
 
@@ -219,9 +204,9 @@ Unpack:
     jp      nc,.newesc      ; e..e010               New Escape
 
 ; e..e011				Short/Long RLE
-    ld      a,[regy]        ; Y is 1 bigger than MSB loops
+    ldh     a,[regy]        ; Y is 1 bigger than MSB loops
     inc     a
-    ld      [regy],a
+    ldh     [regy],a
 
     call    .getval         ; Y is 1, get len,  X=0 -> X=0
     ld      [lzpos],a       ; xstore - Save length LSB
@@ -249,7 +234,7 @@ Unpack:
 
     call    .getval         ; length MSB, X=0 -> X=0
 
-    ld      [regy],a        ; Y is 1 bigger than MSB loops
+    ldh     [regy],a        ; Y is 1 bigger than MSB loops
 
 .chrcode:
     call    .getval         ; Byte Code,  X=0 -> X=0
@@ -264,17 +249,19 @@ Unpack:
     ld      b,a
 
     ld      a,e
-    cp      32              ; 31-32 -> C set, 32-32 -> C clear..
+    cp      16              ; 31-32 -> C set, 32-32 -> C clear..
+                            ; Changed as table is now 15
+                            ; TODO: Update comments to reflect this
     ld      a,[bc]
     jr      c,.less32       ; 1..31
 
 ; Not ranks 1..31, -> 11111°xxxxx (32..64), get byte..
 
-    ld      a,e        ; get back the value (5 valid bits)
+    ld      a,e        ; get back the value (4 valid bits)
 
-    ld      e,3
+    ld      e,4
 
-    call    .getbits        ; get 3 more bits to get a full byte, X=3 -> X=0
+    call    .getbits        ; get 4 more bits to get a full byte, X=4 -> X=0
 
 .less32:
     push    hl
@@ -286,10 +273,14 @@ Unpack:
     ld      b,e
     inc     b               ; adjust for cpx#$ff;bne -> bne
 
-    ld      a,[regy]
+    ldh     a,[regy]
     ld      c,a
 
-    ld16r   hl,OutPtr
+    ld a, [OutPtr + 1]
+    ld h, a
+    ld a, [OutPtr]
+    ld l, a
+    ; ld16r   hl,OutPtr
 
     pop     af
 
@@ -302,7 +293,11 @@ Unpack:
     dec     c
     jr      nz,.dorle       ; Y was 1 bigger than wanted originally
 
-    ld16r   OutPtr,hl
+    ld a, h
+    ld [OutPtr + 1], a
+    ld a, l
+    ld [OutPtr], a
+    ; ld16a   OutPtr, hl
 
     pop     hl
     jp      .main
@@ -360,7 +355,11 @@ Unpack:
     push    de
     push    hl
 
-    ld16r   hl,lzpos
+    ld a, [lzpos + 1]
+    ld h, a
+    ld a, [lzpos] ; TODO: MAKE LZPOS AND READ ADDRESS CONSISTENT
+    ld l, a
+    ; ld16r   hl,lzpos
     ld16r   de,OutPtr
 
     ld      a,b
@@ -383,7 +382,7 @@ Unpack:
     dec     b
     jr      nz,.lzloop      ; X loops, (256,1..255)
 
-    ld16r   OutPtr,de
+    ld16a   OutPtr, de
 
     pop     hl
     pop     de

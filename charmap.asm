@@ -1,22 +1,22 @@
-; Special characters (must be > $E0, apart from "\\")
-charmap "\\",    $00 ; End of string. Return to code.
-charmap "~",     $FF ; Wait.
-charmap "\n",    $FE ; Newline
-charmap "\t",    $FD ; Tab (move forwards by eight pixels)
-charmap "`",     $FC ; Pause for a frame
-charmap "_`_",   $FB ; Pause for multiple frames, e.g. db "_`_",n (p = no. of frames)
-charmap "^",     $FA ; Pixel advance (move forwards by one pixel)
-charmap "_EXEC_",$FB ; Call to executable code, e.g. db "_EXEC_",b; dw a (b = bank, a = address)
-charmap " ",     $F9 ; Space (move forwards by four pixels)
-charmap "§",     $F8 ; Set settings, e.g. db "_@_",s (settings byte)
-charmap "_@_",   $F4 ; Set palette, e.g. db "_@_",p,l,h (p = palette no., l = low byte, h = high byte)
-charmap "_#3_",  $F3 ; Change palette to #3
-charmap "_#2_",  $F2 ; Change palette to #2
-charmap "_#1_",  $F1 ; Change palette to #1
-charmap "_#0_",  $F0 ; Change palette to #0
+; Special characters (must be > $80)
+charmap "\\",    $80 ; End of string. Return to code.
+charmap "~",     $81 ; Wait.
+charmap "\n",    $82 ; Newline
+charmap "\t",    $83 ; Tab (move forwards by eight pixels)
+charmap "`",     $84 ; Pause for a frame
+charmap "_`_",   $85 ; Pause for multiple frames, e.g. db "_`_",n (p = no. of frames)
+charmap "^",     $86 ; Pixel advance (move forwards by one pixel)
+charmap "_EXEC_",$87 ; Call to executable code, e.g. db "_EXEC_",b; dw a (b = bank, a = address)
+charmap " ",     $88 ; Space (move forwards by four pixels)
+charmap "§",     $89 ; Set settings, e.g. db "_@_",s (settings byte)
+charmap "_@_",   $8A ; Set palette, e.g. db "_@_",p,l,h (p = palette no., l = low byte, h = high byte)
+charmap "_#0_",  $8B ; Change palette to #0
+charmap "_#1_",  $8C ; Change palette to #1
+charmap "_#2_",  $8D ; Change palette to #2
+charmap "_#3_",  $8E ; Change palette to #3
 
 ; Print variables
-charmap "_PLAYER_", $E0 ; Print player name
+charmap "_PLAYER_", $8F ; Print player name
 
 ; Uppercase
 charmap "A", $01
@@ -117,11 +117,13 @@ charmap "_left_", $57
 charmap "_right_", $58
 
 ; Danglers
+; TODO: Try not to have the mappings here if possible
 charmap "‡g‡", $59 ; (alt-shift-7)
 charmap "‡p‡", $5A ; (alt-shift-7)
 charmap "‡q‡", $5B ; (alt-shift-7)
 
 ; Corner tiles
+; TODO: Seperate these out of the normal characters
 NextTextPromptArrow EQU $5C
 SaveAnim EQU $5D
 LinkAnim EQU $60

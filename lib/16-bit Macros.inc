@@ -2,9 +2,9 @@
 ld16ra:	MACRO
 __r1    EQUS    STRSUB("\1",1,1)
 __r2    EQUS    STRSUB("\1",2,1)
-ld __r1,[\2]
-inc \2
 ld __r2,[\2]
+inc \2
+ld __r1,[\2]
 dec \2
 PURGE 	__r1
 PURGE 	__r2
@@ -13,9 +13,9 @@ ENDM
 ld16ar:	MACRO
 __r1    EQUS    STRSUB("\2",1,1)
 __r2    EQUS    STRSUB("\2",2,1)
-ld [\1],__r1
-inc \1
 ld [\1],__r2
+inc \1
+ld [\1],__r1
 dec \1
 PURGE 	__r1
 PURGE 	__r2
@@ -26,9 +26,9 @@ __r1    EQUS    STRSUB("\1",1,1)
 __r2    EQUS    STRSUB("\1",2,1)
 push hl
 ld hl, \2
-;ld __r1,[hl]
-;inc hl
-;ld __r2,[hl]
+ld __r2,[hl]
+inc hl
+ld __r1,[hl]
 pop hl
 PURGE 	__r1
 PURGE 	__r2
@@ -39,9 +39,9 @@ __r1    EQUS    STRSUB("\2",1,1)
 __r2    EQUS    STRSUB("\2",2,1)
 push hl
 ld hl,\1
-ld [hl],__r1
-inc hl
 ld [hl],__r2
+inc hl
+ld [hl],__r1
 pop hl
 PURGE 	__r1
 PURGE 	__r2

@@ -1,76 +1,84 @@
 INCLUDE "Subroutines.asm"
 
-SECTION	"Org $00",HOME[$00]
-RST_00:	
+SECTION	"Org $00",ROM0[$00]
+RST_00:
+    ld b, b
 	jp	$100
 
-SECTION	"Org $08",HOME[$08]
-RST_08:	
+SECTION	"Org $08",ROM0[$08]
+RST_08:
+    ld b, b
 	jp	$100
 
-SECTION	"Org $10", HOME[$10]
+SECTION	"Org $10", ROM0[$10]
 RST_10:
+    ld b, b
 	jp	$100
 
-SECTION	"Org $18", HOME[$18]
+SECTION	"Org $18", ROM0[$18]
 RST_18:
+    ld b, b
 	jp	$100
 
-SECTION	"Org $20", HOME[$20]
+SECTION	"Org $20", ROM0[$20]
 RST_20:
+    ld b, b
 	jp	$100
 
-SECTION	"Org $28", HOME[$28]
+SECTION	"Org $28", ROM0[$28]
 RST_28:
+    ld b, b
 	jp	$100
 
-SECTION	"Org $30", HOME[$30]
+SECTION	"Org $30", ROM0[$30]
 RST_30:
+    ld b, b
 	jp	$100
 
-SECTION	"Org $38", HOME[$38]
+SECTION	"Org $38", ROM0[$38]
 RST_38:
+    ld b, b
 	jp	$100
 
-SECTION	"V-Blank IRQ Vector", HOME[$40]
-VBL_VECT:
+SECTION	"V-Blank IRQ Vector", ROM0[$40]
+VBlankInterrupt:
     jp VBlankHandler
 	
-SECTION	"LCD IRQ Vector", HOME[$48]
-LCD_VECT:
+SECTION	"LCD IRQ Vector", ROM0[$48]
+LCDInterrupt:
 ; Is only called for H-Blanks
 ; Not got anything to do just yet
 	jp HBlankHandler
 
-SECTION	"Timer IRQ Vector", HOME[$50]
-TIMER_VECT:
+SECTION	"Timer IRQ Vector", ROM0[$50]
+TimerInterrupt:
 	reti
 
-SECTION	"Serial IRQ Vector", HOME[$58]
-SERIAL_VECT:
+SECTION	"Serial IRQ Vector", ROM0[$58]
+SerialInterrupt:
 ; Will we need link capabilities? Expand if so!
 	reti
 
-SECTION	"Joypad IRQ Vector", HOME[$60]
-JOYPAD_VECT:
+SECTION	"Joypad IRQ Vector", ROM0[$60]
+ControllerInterrupt:
 	reti
 	
-SECTION	"Header",HOME[$100]
+SECTION	"Header",ROM0[$100]
 	ld c, a
-	jp	Start
+	jp Start
 
 	; Nintendo logo
-	db	$CE,$ED,$66,$66,$CC,$0D,$00,$0B,$03,$73,$00,$83,$00,$0C,$00,$0D
-	db	$00,$08,$11,$1F,$88,$89,$00,$0E,$DC,$CC,$6E,$E6,$DD,$DD,$D9,$99
-	db	$BB,$BB,$67,$63,$6E,$0E,$EC,$CC,$DD,$DC,$99,$9F,$BB,$B9,$33,$3E
+	db $CE,$ED,$66,$66,$CC,$0D,$00,$0B,$03,$73,$00,$83,$00,$0C,$00,$0D
+	db $00,$08,$11,$1F,$88,$89,$00,$0E,$DC,$CC,$6E,$E6,$DD,$DD,$D9,$99
+	db $BB,$BB,$67,$63,$6E,$0E,$EC,$CC,$DD,$DC,$99,$9F,$BB,$B9,$33,$3E
 
 	; Game title
-    db	$46,$4F,$55,$4E,$44,$41,$54,$49,$4F,$4E,$53 ; FOUNDATIONS in ASCII
-		;0123456789A
+    db $46,$4F,$55,$4E,$44,$41,$54,$49,$4F,$4E,$53 ; FOUNDATIONS in ASCII
+       ;0123456789A
 
 	; Product code
-	db	"    "
-		;0123
+	db $00,$00,$00,$00
+        ;0123
 
 	; Color GameBoy compatibility
 	db	$C0	; GBC Only
@@ -90,7 +98,7 @@ SECTION	"Header",HOME[$100]
 	; RAM size
     db	$04	; 128KB (16 banks) $04 ($00)
 
-	; $Destination code
+	; Destination code
 	db	$01	; $01 - Non-Japanese
 
 	; Old Licensee Code

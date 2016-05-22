@@ -1,13 +1,14 @@
 ; Libraries
-INCLUDE "lib/16-bit Macros.inc"
+; INCLUDE "lib/16-bit Macros.inc"
 INCLUDE "lib/Shift.inc"
 ;INCLUDE "Hardware.inc"
 
 INCLUDE "charmap.asm"
-; INCLUDE "lib/Pucrunch.asm"
+INCLUDE "lib/Pucrunch.asm"
 
 ; Hardware macros
 JOYP  EQU $FF00 ; Joypad
+DIVI  EQU $FF04 ; Divider
 TMA   EQU $FF06 ; Timer modulo
 TAC   EQU $FF07 ; Timer control
 NR11  EQU $FF11 ; PU1 Length & Wave duty
@@ -22,6 +23,7 @@ SCY   EQU $FF42 ; Background Scroll Y
 SCX   EQU $FF43 ; Background Scroll X
 LY    EQU $FF44 ; LY
 LYC   EQU $FF45 ; LY Compare
+ODMA  EQU $FF46 ; OAM DMA Register
 BGP   EQU $FF47 ; Original GB colour palettes
 BGPI  EQU $FF68 ; Background Palette Index
 BGPD  EQU $FF69 ; Background Palette Data
@@ -38,18 +40,22 @@ HDMA5 EQU $FF55 ; DMA Mode/Length/Start
 IE    EQU $FFFF ; Interrupts
 
 INCLUDE "Header.asm"
+INCLUDE "Ben10do Screen.asm"
+
+SECTION "Quick-access Variables", HRAM
+VBlankOccurred: db
+ResetDisallowed: db
 
 SECTION "General Variables", WRAM0
-VBlankOccurred: db
 PlayingOnGBA: db
-ResetDisallowed: db
 TempAnimFrame: db
 TempAnimWait: db
 
-
-SECTION "Stack Space", WRAM0[$CF80]
 StackSize EQU $80
+
+SECTION "Stack Space", WRAM0[$D000 - StackSize]
 StackSpace: ds StackSize
+StackEnd:
 
 SECTION "Start",HOME[$0150]
 Start:
@@ -86,7 +92,7 @@ GameStartup:
     ld [ResetDisallowed], a
 
 ; Set up stack
-    ld sp, StackSpace + StackSize - 1
+    ld sp, StackEnd - 1
 
 ; Use single speed mode, if we were in double speed when we reset
     DisableDoubleSpeed
@@ -98,10 +104,7 @@ GameStartup:
     ld [TAC], a
 
 ; Enable the correct interrupts
-    ld a, %01000000 ; Requesting LYC interrupt only.
-    ld [STAT], a
-
-    ld a, %00000111 ; Timer, H-Blank (LCD STAT), V-Blank
+    ld a, %00000111 ; Timer, LYC (LCD STAT), V-Blank
     ld [IE], a      ; TODO: Add serial to this to add link capablilities?
 
     call InitSoundEngine
@@ -111,34 +114,47 @@ GameStartup:
     ld [TempAnimWait], a
     ei
 
-.SRAMTest
-    ld a, 1
-    ld [ResetDisallowed], a
+; Set up the OAM DMA Subroutine
+    MemCopy DMAWaitInROM, OAMDMAWait, 8
 
+.SRAMTest
     EnableSRAM
 
-    ld a, [$A000]
-    ld c, a
+    ld hl, $A000
+    ld c, [hl]
 
     xor a
-    ld [$A000], a
+    ld [hl], a
 
-    ld a, [$A000]
-    ld b, a
+    ld b, [hl]
 
-    ld a, c
-    ld [$A000], a
+    ld [hl], c
 
     DisableSRAM
-    ld [ResetDisallowed], a
 
     ld a, b
     or a
     jp nz, .SRAMBroken
 
 .MainBit
+    ld a, 1
+    call PlayMusic
+
+    CallToOtherBank ShowBen10doScreen
+
+    ld hl, LCDC
+    res 4, [hl]
+
     call ShowTextBox
-    ld hl, WarningString
+    ld hl, DemoStringOne
+    call PrintString
+    call CloseTextBox
+
+    ld c, 240
+    call WaitFrames
+
+    call ShowTextBox
+    ld hl, DemoStringTwo
     call PrintString
 
     call FastFadeText
@@ -182,15 +198,20 @@ GameStartup:
     call ReplaceLastTile
 
     call CloseTextBox
+
     call FastFadeToBlack
-    
-    xor a
-    call PlayMusic
 
     DisableDoubleSpeed
 
-    call VerifyChecksum
-    or a
+    ; TODO: Must include a suitable seed in a
+    ld a, [$DD9B] ; This is very temporary
+    call SeedRNG
+
+    call Random
+    bit 0, a
+
+    ;call VerifyChecksum
+    ;or a
     jr nz, .AttemptingAnRPGTextBox
 
 .AttemptingAQuicksaveBlackout
@@ -226,6 +247,9 @@ GameStartup:
     jr .FillerHalt
 
 .SRAMBroken
+    ld hl, LCDC
+    res 4, [hl]
+
     call ShowTextBox
     ld hl, FoolishFools
     call PrintString
@@ -256,6 +280,15 @@ WipeSaveData:
 
     DisableSRAM
     ret
+
+DemoStringOne:
+    db "Huh?\n_@_", 1, GreenColour, "`````"
+    db "Is this a _#1_Plot Coupon?!~\\"
+
+DemoStringTwo:
+    db "_@_", 1, GreenColour
+    db "You got a _#1_Plot Coupon!_#3_``````````\n"
+    db "Only loads more to go!``````````````````````````````````~\\"
 
 WarningString:
     db "The save data must \nbe initialised._@_", 1, RedColour, "_#1__`_", 12
@@ -423,13 +456,11 @@ FastFadeToWhite:
     ld b, 32 ; Number of colours to modify
     ld c, 0 ; Address
 .BGPaletteLoop
-    call EnsureVBlank
-
 ; Load the palette into hl
     inc c
     ld a, c
     ld [BGPI], a
-
+    call EnsureVBlank
     ld a, [BGPD]
     ld h, a
 
@@ -440,6 +471,7 @@ FastFadeToWhite:
 
     set 7, a ; Increment after writing
     ld [BGPI], a
+    call EnsureVBlank
     ld a, [BGPD]
     ld l, a
 
@@ -447,11 +479,36 @@ FastFadeToWhite:
     call EnsureVBlank
     sla16 hl, 1
     ld a, l
-    or %00100001
+    bit 5, a
+    jr z, .BGSkipOverflowR
+.BGOverflowR
+    or a, %00011111
+
+.BGSkipOverflowR
+    or a, %00100001
+    ld e, a
+    call EnsureVBlank
+    ld a, e
     ld [BGPD], a
 
     ld a, h
-    or %00000100
+    bit 2, a
+    jr z, .BGSkipOverflowG
+.BGOverflowG
+    ; Note, this won't give a perfect result for green
+    or a, %00000011
+
+.BGSkipOverflowG
+    bit 7, a
+    jr z, .BGSkipOverflowB
+.BGOverflowB
+    or a, %01111100
+
+.BGSkipOverflowB
+    or a, %00000100
+    ld e, a
+    call EnsureVBlank
+    ld a, e
     ld [BGPD], a
 
     dec b
@@ -467,8 +524,20 @@ FastFadeToWhite:
     sla c
     dec c
     ld a, c
-    ld [OBPI], a
 
+    and %110
+    jr nz, .ContinueLoadingColour
+
+.SkipUnusedColour
+    dec c
+    dec c
+    dec b
+    jr z, .Finish
+
+.ContinueLoadingColour
+    ld a, c
+    ld [OBPI], a
+    call EnsureVBlank
     ld a, [OBPD]
     ld h, a
 
@@ -476,27 +545,60 @@ FastFadeToWhite:
     ld a, c
     set 7, a ; Increment after writing
     ld [OBPI], a
+    call EnsureVBlank
     ld a, [OBPD]
     ld l, a
 
 ; Manipulate the palette data
     call EnsureVBlank
-
     sla16 hl, 1
-    ld a, l
-    or %00100001
+    ld a, h
+    bit 5, a
+    jr z, .SpriteSkipOverflowR
+.SpriteOverflowR
+    or a, %00011111
+
+.SpriteSkipOverflowR
+    bit 2, h
+    jr z, .SpriteSkipOverflowG1
+.SpriteOverflowG1
+    or a, %1100000
+
+.SpriteSkipOverflowG1
+    or a, %00100001
+    ld e, a
+    call EnsureVBlank
+    ld a, e
     ld [OBPD], a
 
+    call EnsureVBlank
     ld a, h
-    or %00000100
+    bit 2, a
+    jr z, .SpriteSkipOverflowG
+.SpriteOverflowG
+    ; Note, this won't give a perfect result for green
+    or a, %00000011
+
+.SpriteSkipOverflowG
+    bit 7, a
+    jr z, .SpriteSkipOverflowB
+.SpriteOverflowB
+    or a, %01111100
+
+.SpriteSkipOverflowB
+    or a, %00000100
+    ld e, a
+    call EnsureVBlank
+    ld a, e
     ld [OBPD], a
 
     dec b
     jr nz, .SpritePaletteLoop
 
+.Finish
     call WaitFrame
     dec d
-    jr nz, .OuterLoop
+    jp nz, .OuterLoop
     ret
 
 
@@ -513,22 +615,22 @@ VBlankHandler:
 .CheckReset
     ld a, [ResetDisallowed]
     or a
-    jr nz, .SetVBlankOccuredFlag
+    jr nz, .SetVBlankOccurredFlag
 
     ld a, %11011111 ; Set buttons; need to reset them to what they were before!
     ld [JOYP], a
 
     ld a, [JOYP]
     and a, %00001111
-    jr nz, .SetVBlankOccuredFlag
+    jr nz, .SetVBlankOccurredFlag
 
 .Reset
     SwitchROMBank BANK(GameStartup)
     jp GameStartup
 
-.SetVBlankOccuredFlag
+.SetVBlankOccurredFlag
     xor a
-    ld [VBlankOccurred], a
+    ldh [VBlankOccurred], a
 
 .Anim
     call SoundEngineUpdate
@@ -588,12 +690,12 @@ TempAnim:
 
 HBlankHandler:
     push af
-    push bc
 
-.Loop
     ld a, [STAT]
     bit 1, a
-    jr nz, .Loop
+    jr nz, .SetUpHBlankInterrupt
+
+    push bc
 
     ld a, [BGPI]
     ld b, a
@@ -620,7 +722,16 @@ HBlankHandler:
 
 .Continue
     ld [LYC], a
+
+    ld a, %01000000
+    ld [STAT], a
     pop bc
+    pop af
+    reti
+
+.SetUpHBlankInterrupt
+    ld a, %00001000
+    ld [STAT], a
     pop af
     reti
 
@@ -636,7 +747,7 @@ VerifyChecksum:
     jr .InnerLoop
 
 .OuterLoop
-    ld a, [CurrentROMBank]
+    ldh a, [CurrentROMBank]
     cp $FF
     jr z, .Done
 
@@ -704,29 +815,3 @@ VerifyChecksum:
     DisableDoubleSpeed
     ld a, b
     ret
-
-SECTION "TempSong", ROMX[$6000]
-TempSong:
-    tempo 16
-REPT 100
-    note C_4, 2
-    note E_4, 2
-    note B_4, 3
-    note D_5, 1
-    note C_5, 2
-    note E_5, 2
-    note B_5, 3
-    note D_6, 1
-ENDR
-
-TempSongPU2:
-REPT 100
-    note D_6, 2
-    note C_4, 2
-    note E_4, 3
-    note B_4, 1
-    note D_5, 2
-    note C_5, 2
-    note E_5, 3
-    note B_5, 1
-ENDR

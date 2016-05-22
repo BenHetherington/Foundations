@@ -13,7 +13,12 @@ PrintSettings: db            ; 0000 0bss: - ss = 00 for normal, 01 for faster, 1
                              ;            - b = 0 for beeps, 1 for no beeps (SFX)
                              ; Remaining bits are yet to be decided (but are currently unused)
 
-SpecialCharactersLimit EQU $E0
+SpecialCharactersLimit EQU $80
+BiggestSpecialCharacter EQU $8F
+
+TileID EQU $26
+TilesPosition EQU (TileID << 4) + $9000
+TilesPerLine EQU $120
 
 SECTION "Blank Tile Data", ROMX[$7000]
 BlankTiles:
@@ -155,11 +160,10 @@ ShowTextBox:
     call EnsureVBlank
 
 .SetUpWindow
-    ld a, [LCDC]
-    set 6, a ; Set tiles for the window
-             ; Perhaps shouldn't be necessary if this is set once at the start
-    set 5, a ; Enables window
-    ld [LCDC], a
+    ld hl, LCDC
+    ld a, %01100000 ; Set the map for the window, and enable the window.
+    or a, [hl]
+    ld [hl], a
 
 .SetInitialWindowPosition
     ld a, 144
@@ -172,6 +176,7 @@ ShowTextBox:
     call EnsureVBlank
 
 .SetMapAttributes
+    ; TODO: Use DMA
     ld a, 1
     ld [VBK], a
 
@@ -194,7 +199,8 @@ ShowTextBox:
 
 .SetMapLayout
     call EnsureVBlank
-    xor a
+    ; TODO: Use DMA
+    ld a, TileID
     ld [VBK], a ; Use VRAM Bank 0
 
     ld hl, $9C00 + $21
@@ -213,12 +219,11 @@ ShowTextBox:
     dec b
     jr nz, .MapLayoutLoop
     ld de, OpeningSound
+    ld hl, WY
     jr .AnimationLoop
 
 .AnimationSoundFX
 ; TODO: Eliminate this in favour of a much better sound engine
-;and 2
-;jr z, .AnimationLoop
     ld a, $81
     ld [NR12], a
     ld a, [de]
@@ -231,13 +236,14 @@ ShowTextBox:
 
 .SetTiles
     call ClearTextBox
+    ld hl, WY
 
 .AnimationLoop
 ; Move the window up by 4px every frame, until it's 48px tall.
     call WaitFrame
-    ld a, [WY]
-    sub a, 4
-    ld [WY], a
+    ld a, ($100 - 4)
+    add a, [hl]
+    ld [hl], a
     cp (144 - 4)
     jr z, .SetMapLayout
     cp (144 - 24)
@@ -258,12 +264,13 @@ OpeningSound
 
 CloseTextBox:
     ld de, ClosingSound
+    ld hl, WY
 
 .AnimationLoop
 ; Move the window down by 4px every frame, until it's off-screen.
     call WaitFrame
-    ld a, [WY]
-    add a, 4
+    ld a, 4
+    add a, [hl]
     ld [WY], a
     cp (144 - 24)
     jr c, .AnimationSoundFX
@@ -308,7 +315,7 @@ PlayTextBeep
 
 ClearTextBox:
 ; Clears all of the text box tiles.
-    StartVRAMDMA BlankTiles, $8000, $5B0, 1
+    StartVRAMDMA BlankTiles, TilesPosition, $5B0, 1
     WaitForVRAMDMAToFinish
 
 SetPrintVariables:
@@ -320,10 +327,10 @@ SetPrintVariables:
     ld [TextSubtilesPositionY], a
     ld [TextTilesPositionY], a
 
-    ld a, $80
-    ld [TextTilesPointer], a
-    ld a, $10
+    ld a, TilesPosition >> 8
     ld [TextTilesPointer + 1], a
+    ld a, (TilesPosition & $FF) + $10
+    ld [TextTilesPointer], a
 
     ld a, $03
     ld [TextColour], a
@@ -338,9 +345,6 @@ PrintString:
 ; Assumes that the pointer to the string to print is in hl
     SwitchWRAMBank BANK(TextTilesPointer)
     ld a, [hl+]
-.EndOfStringCheck
-    and a ; "\\"
-    ret z
 
     cp SpecialCharactersLimit
     jr nc, ProcessSpecialCharacter
@@ -349,21 +353,16 @@ PrintString:
     push af
     push hl
     call PutChar
-    ld a, [PrintSettings]
-    bit 2, a
+
+    ld hl, PrintSettings
+    bit 2, [hl]
     jr nz, .WaitFrame
     call PlayTextBeep ; TODO: Replace with proper call to sound engine
 
 .WaitFrame
-    ld a, [PrintSettings]
-    bit 0, a
+    bit 0, [hl]
     jr nz, .Finish
     call WaitFrame
-
-    ;ld a, [PrintSettings]
-    ;bit 1, a
-    ;jr nz, .Finish
-    ;call WaitFrame
 
 .Finish
     pop hl
@@ -373,102 +372,100 @@ PrintString:
 
 ProcessSpecialCharacter
 ; Deals with the special characters
-; TODO: Add "_EXEC_"
-.WaitCheck
-    cp "~"
-    jr nz, .NewlineCheck
+    sla a
+
+; Checking that an invalid character isn't used
+    cp BiggestSpecialCharacter
+    ret nc ; TODO: Decide what to do if an invalid character is found
+
+    push hl
+
+; Loading the address in the vector table
+    add a, .CommandsVector % $100
+    ld l, a
+    adc a, .CommandsVector / $100
+    sub a, l
+    ld h, a
+
+; Loading hl with the address to jump to
+    ld a, [hl+]
+    ld d, a
+    ld a, [hl+]
+    ld h, a
+    ld l, d
+
+; Boing!
+    jp [hl]
+
 .Wait
     call Wait
+    pop hl
     jr PrintString
 
-.NewlineCheck
-    cp "\n"
-    jr nz, .TabCheck
 .Newline
     call MoveToNextLine
+    pop hl
     jr PrintString
 
-.TabCheck
-    cp "\t"
-    jr nz, .PauseCheck
 .Tab
     ld b, 8
     call AdvanceTextPosition
+    pop hl
     jr PrintString
 
-.PauseCheck
-    cp "`"
-    jr nz, .LongPauseCheck
 .Pause
     ld c, 2
     call WaitFrames
+    pop hl
     jr PrintString
 
-.LongPauseCheck
-    cp "_`_"
-    jr nz, .PixelAdvanceCheck
 .LongPause
+    pop hl
     ld a, [hl+]
     ld c, a
     call WaitFrames
     jr PrintString
 
-.PixelAdvanceCheck
-    cp "^"
-    jr nz, .SpaceCheck
 .PixelAdvance
+    pop hl
     ld b, 1
     call AdvanceTextPosition
     jr PrintString
 
-.SpaceCheck
-    cp " "
-    jr nz, .Palette0Check
 .Space
     ld b, 4
     call AdvanceTextPosition
-    ld a, [PrintSettings]
-    bit 1, a
-    jr PrintString
-    call WaitFrame
-    jp PrintString
 
-.Palette0Check
-    cp "_#0_"
-    jp nz, .Palette1Check
+    ld hl, PrintSettings
+    bit 1, [hl]
+    pop hl
+
+    jr nz, PrintString
+    call WaitFrame
+    jr PrintString
+
 .Palette0
     xor a
-    ld [TextColour], a
-    jp PrintString
+    jr .PickPalette
 
-.Palette1Check
-    cp "_#1_"
-    jr nz, .Palette2Check
 .Palette1
     ld a, $01
-    ld [TextColour], a
-    jp PrintString
+    jr .PickPalette
 
-.Palette2Check
-    cp "_#2_"
-    jr nz, .Palette3Check
 .Palette2
     ld a, $02
-    ld [TextColour], a
-    jp PrintString
+    jr .PickPalette
 
-.Palette3Check
-    cp "_#3_"
-    jr nz, .SetPaletteCheck
 .Palette3
     ld a, $03
+
+.PickPalette
     ld [TextColour], a
+    pop hl
     jp PrintString
 
-.SetPaletteCheck
-    cp "_@_"
-    jr nz, .SetSettingsCheck
 .SetPalette
+    pop hl
     ld a, [hl+]
     sla a
     add a, (8 * 7) + %10000000
@@ -479,17 +476,48 @@ ProcessSpecialCharacter
     ld [BGPD], a
     jp PrintString
 
-.SetSettingsCheck
-    cp "§"
-    jp nz, PrintString ; Ignore invalid character
 .SetSettings
+    pop hl
     ld a, [hl+]
     ld [PrintSettings], a
     jp PrintString
 
+.ExecuteCode ; "_EXEC_"
+    ; TODO: Needs to actually do something
+    pop hl
+    jp PrintString
+
+.EndOfString ; "\\"
+    pop hl
+    ret
+
+.PlayerName ; ""
+    pop hl
+    jp PrintString
+
+
+.CommandsVector
+    dw .EndOfString ; "\\"
+    dw .Wait        ; "~"
+    dw .Newline     ; "\n"
+    dw .Tab         ; "\t"
+    dw .Pause       ; "`"
+    dw .LongPause   ; "_`_"
+    dw .PixelAdvance; "^"
+    dw .ExecuteCode ; "_EXEC_"
+    dw .Space       ; " "
+    dw .SetSettings ; "§"
+    dw .SetPalette  ; "_@_"
+    dw .Palette0    ; "_#0_"
+    dw .Palette1    ; "_#1_"
+    dw .Palette2    ; "_#2_"
+    dw .Palette3    ; "_#3_"
+    dw .PlayerName  ; "_PLAYER_"
+
 
 Wait
 ; Waits for the player to press the A or B button
+; TODO: Betterify this
     push hl
     ld a, 5
     ld [TempAnimWait], a
@@ -537,9 +565,9 @@ PutChar:
     ld [VBK], a ; Putting the tiles in bank 2
 
     ld bc, TextTilesWorkSpace
-    ld a, [TextTilesPointer]
-    ld h, a
     ld a, [TextTilesPointer + 1]
+    ld h, a
+    ld a, [TextTilesPointer]
     ld l, a
 
     ld e, 2 ; Some sort of counter
@@ -572,7 +600,7 @@ PutChar:
 .FirstByte
     call EnsureVBlank
     ld a, [hl]
-    or b
+    or a, b
     ld [hl], a
 
 .CheckSecondByte
@@ -583,7 +611,7 @@ PutChar:
 .SecondByte
     call EnsureVBlank
     ld a, [hl]
-    or c
+    or a, c
     ld [hl], a
 
 .FinishCopy
@@ -851,24 +879,24 @@ AdvanceTextPosition:
     ld [TextSubtilesPositionX], a
 
     ld d, a
-    ld a, 8
+    ld a, 7
     sub a, d
     ret nc
 
 .OverflowIntoNewTile
     cpl
-    inc a
+    ; inc a
     ld [TextSubtilesPositionX], a
 
-    ld a, [TextTilesPointer + 1]
+    ld a, [TextTilesPointer]
     add a, $10
-    ld [TextTilesPointer + 1], a
+    ld [TextTilesPointer], a
 
     ret nc
 
-    ld a, [TextTilesPointer]
+    ld a, [TextTilesPointer + 1]
     inc a
-    ld [TextTilesPointer], a
+    ld [TextTilesPointer + 1], a
 
     ret
 
@@ -885,19 +913,19 @@ MoveToNextLine:
     jr .IncorrectLine
 
 .MoveToLine2
-    ld a, $81
-    ld [TextTilesPointer], a
-    ld a, $30
+    ld a, (TilesPosition + TilesPerLine + $10) >> 8
     ld [TextTilesPointer + 1], a
+    ld a, (TilesPosition + TilesPerLine + $10) & $FF
+    ld [TextTilesPointer], a
     ld a, 4
     ld [TextSubtilesPositionY], a
     ret
 
 .MoveToLine3
-    ld a, $83
-    ld [TextTilesPointer], a
-    ld a, $70
+    ld a, (TilesPosition + (3 * TilesPerLine) + $10) >> 8
     ld [TextTilesPointer + 1], a
+    ld a, (TilesPosition + (3 * TilesPerLine) + $10) & $FF
+    ld [TextTilesPointer], a
     xor a
     ld [TextSubtilesPositionY], a
     ret
@@ -924,11 +952,12 @@ ReplaceLastTile:
     ld a, 1
     ld [VBK], a
     ld bc, TextTilesWorkSpace
-    ld hl, $8480
+    ld hl, TilesPosition + (4 * TilesPerLine) ; $8480
     ld e, 1
     push de
     ld e, 3
     ld d, 8
+
 .TileCopyLoop
     ld a, [bc]
     push bc
