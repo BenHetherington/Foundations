@@ -1,6 +1,3 @@
-INCLUDE "Sound/Music/TempSong.asm"
-INCLUDE "Sound/Music/AzeleaTownTest.asm"
-
 SECTION "Music Pointers",ROMX
 
 ; Contains pointers to the music data for each channel.

@@ -1,13 +1,12 @@
+INCLUDE "SubroutineMacros.inc"
+INCLUDE "lib/Shift.inc"
+
 SECTION "BankSwitchData", HRAM
-CurrentROMBank:  db
+CurrentROMBank::  db
 
 SECTION "BankSwitch", ROM0
-SRAMEnableLocation EQU $0000
-ROMBankSwitchLocation EQU $2000
-SRAMBankSwitchLocation EQU $4000
-WRAMBankSwitchLocation EQU $FF70
 
-CallToOtherBankFunction:
+CallToOtherBankFunction::
 ; assumes *c* is the requested bank - different to other functions!
 ; assumes hl is the address required within said bank
 ; use b and de to pass data there, and bc, de, and hl to pass data back
@@ -33,14 +32,7 @@ CallToOtherBankFunction:
     ret
 
 
-CallToOtherBank: MACRO
-    ld c, BANK(\1)
-    ld hl, \1
-    call CallToOtherBankFunction
-    ENDM
-
-
-JumpToOtherBankFunction:
+JumpToOtherBankFunction::
 ; assumes *a* is the requested bank
 ; assumes hl is the address required within said bank
 ; use bc and de to pass data there
@@ -49,147 +41,7 @@ JumpToOtherBankFunction:
     jp hl
 
 
-JumpToOtherBank: MACRO
-    ld a, BANK(\1)
-    ld hl, \1
-    jp JumpToOtherBankFunction
-    ENDM
-
-
-SwitchROMBank: MACRO
-    ld a, \1
-    SwitchROMBankFromRegister
-    ENDM
-
-
-SwitchROMBankFromRegister: MACRO
-; assumes *a* is the requested bank
-    ldh [CurrentROMBank], a
-    ld [ROMBankSwitchLocation], a
-    ENDM
-
-
-PushROMBank: MACRO
-    ldh a, [CurrentROMBank]
-    push af
-    ENDM
-
-
-PopROMBank: MACRO
-    pop af
-    SwitchROMBankFromRegister
-    ENDM
-
-
-EnableSRAM: MACRO
-    ld a, $0A
-    ld [ResetDisallowed], a
-    ld [SRAMEnableLocation], a
-    ENDM
-
-
-DisableSRAM: MACRO
-    xor a
-    ld [SRAMEnableLocation], a
-    ld [ResetDisallowed], a
-    ENDM
-
-
-SwitchSRAMBank: MACRO
-    ld a, \1
-    ld [SRAMBankSwitchLocation], a
-    ENDM
-
-
-SwitchWRAMBank: MACRO
-    ld a, \1
-    ld [WRAMBankSwitchLocation], a
-    ENDM
-
-
-PushWRAMBank: MACRO
-    ld a, [WRAMBankSwitchLocation]
-    push af
-    ENDM
-
-
-PopWRAMBank: MACRO
-    pop af
-    ld [WRAMBankSwitchLocation], a
-    ENDM
-
-
 SECTION "GBC Subroutines", ROM0
-
-KEY1 EQU $FF4D
-
-SwitchSpeed: MACRO
-    ld a, 1
-    ld [KEY1], a
-    stop
-    ENDM
-
-EnableDoubleSpeed: MACRO
-; Switches to double speed if we're not already in double speed mode.
-    ld a, [KEY1]
-    bit 7, a
-    jr nz, .Done\@
-.Switch\@
-    SwitchSpeed
-.Done\@
-    ENDM
-
-DisableDoubleSpeed: MACRO
-; Switches to regular speed if we're currently in double speed mode.
-    ld a, [KEY1]
-    bit 7, a
-    jr z, .Done\@
-.Switch\@
-    SwitchSpeed
-.Done\@
-    ENDM
-
-
-StartVRAMDMA: MACRO
-; Assuming the DMA Wait Routine is in HRAM already
-; \1: Source, \2: Destination, \3: Length, \4: 0 = General, 1 = H-Blank
-    ;IF \1 & $F != 0
-    ;WARN "DMA Souce address's lower four bits must be 0."
-    ;ENDC
-
-    ;IF \2 & $F != 0
-    ;WARN "DMA Destination address's lower four bits must be 0."
-    ;ENDC
-
-    ld a, (\1 >> 8)
-    ld [HDMA1], a
-    ld a, (\1 & $FF)
-    ld [HDMA2], a
-
-    ld a, (\2 >> 8)
-    ld [HDMA3], a
-    ld a, (\2 & $FF)
-    ld [HDMA4], a
-
-    ld a, (((\3 / $10) - 1) & $7F) | ((\4 & 1) << 7)
-    ld [HDMA5], a
-    ENDM
-
-
-WaitForVRAMDMAToFinish: MACRO
-.Loop\@
-    ld a, [HDMA5]
-    cp $FF
-    jr nz, .Loop\@
-    ENDM
-
-
-StartOAMDMA: MACRO
-    di
-    ld a, \1 >> 8
-    call OAMDMAWait
-    ei
-    ENDM
 
 
 SECTION "DMA Wait Location", HRAM
@@ -208,7 +60,7 @@ DMAWaitInROM::
 
 
 SECTION "Graphics Subroutines", ROM0
-WaitFrame:
+WaitFrame::
 ; Returns after the next V-Blank begins, and the interrupt is finished.
     ld a, 1
     ldh [VBlankOccurred], a
@@ -219,14 +71,14 @@ WaitFrame:
     jr nz, .Wait
     ret
 
-WaitFrames:
+WaitFrames::
 ; Waits for c frames.
     call WaitFrame
     dec c
     jr nz, WaitFrames
     ret
 
-EnsureVBlank:
+EnsureVBlank::
     ld a, [STAT]
     bit 1, a
     ret z
@@ -248,7 +100,7 @@ EnsureVBlank:
 ;; Acts like a busy-wait loop if not using the interrupt.
 ;    jr EnsureVBlank
 
-CheckVBlank:
+CheckVBlank::
 ; If a is non-zero, we're in V-Blank. If a is zero, we're not in V-Blank.
 ; Can also just check the z flag after this returns!
     ld a, [STAT]
@@ -445,27 +297,6 @@ SmallMemCopyRoutine::
     jr nz, .Loop
     ret
 
-MemCopy: MACRO
-; A wrapper for the MemCopyRoutine
-; \1 = source, \2 = destination, \3 = byte count
-    ld hl, \1
-    ld de, \2
-
-IF \3 == 0
-    WARN "Invalid parameter: Bytes must be greater than 0."
-ENDC
-
-IF \3 > $FF
-    ld bc, \3
-    call MemCopyRoutine
-ENDC
-
-IF \3 < $100
-    ld b, \3
-    call SmallMemCopyRoutine
-ENDC
-    ENDM
-
 MemCopyFixedDestRoutine::
 .Loop
     call EnsureVBlank
@@ -475,12 +306,4 @@ MemCopyFixedDestRoutine::
     dec b
     jr nz, .Loop
     ret
-
-MemCopyFixedDest: MACRO
-; \1 = source, \2 = destination (fixed), \3 = byte count
-    ld hl, \1
-    ld c, (\2 & $FF)
-    ld b, \3
-    call MemCopyFixedDestRoutine
-    ENDM
 

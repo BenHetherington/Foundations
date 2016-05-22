@@ -1,9 +1,13 @@
+INCLUDE "Sound/Macros.asm"
+
 SECTION "Azelea Town Test", ROMX
 
 ; It's not really Azelea Town anymore, but I can't be bothered to change the name
 ; TODO: Delete this or something
 
-AzeleaTownTestPU1:
+; TODO: Make these not need to be exported
+
+AzeleaTownTestPU1::
     tempo $0B
 REPT 100
 REPT 2

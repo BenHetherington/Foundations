@@ -1,55 +1,20 @@
 ; Libraries
-; INCLUDE "lib/16-bit Macros.inc"
+INCLUDE "lib/16-bitMacros.inc"
 INCLUDE "lib/Shift.inc"
+INCLUDE "SubroutineMacros.inc"
 ;INCLUDE "Hardware.inc"
+INCLUDE "StringMacros.inc"
 
 INCLUDE "charmap.asm"
-INCLUDE "lib/Pucrunch.asm"
-
-; Hardware macros
-JOYP  EQU $FF00 ; Joypad
-DIVI  EQU $FF04 ; Divider
-TMA   EQU $FF06 ; Timer modulo
-TAC   EQU $FF07 ; Timer control
-NR11  EQU $FF11 ; PU1 Length & Wave duty
-NR12  EQU $FF12 ; PU1 Envelope
-NR13  EQU $FF13 ; PU1 Freq low
-NR14  EQU $FF14 ; PU1 Freq high +
-NR23  EQU $FF18 ; PU2 Freq low
-NR33  EQU $FF1D ; WAV Freq low
-LCDC  EQU $FF40 ; LCD Control
-STAT  EQU $FF41 ; LCDC Status
-SCY   EQU $FF42 ; Background Scroll Y
-SCX   EQU $FF43 ; Background Scroll X
-LY    EQU $FF44 ; LY
-LYC   EQU $FF45 ; LY Compare
-ODMA  EQU $FF46 ; OAM DMA Register
-BGP   EQU $FF47 ; Original GB colour palettes
-BGPI  EQU $FF68 ; Background Palette Index
-BGPD  EQU $FF69 ; Background Palette Data
-OBPI  EQU $FF6A ; Sprite Palette Index
-OBPD  EQU $FF6B ; Sprite Palette Data
-WY    EQU $FF4A ; Window Scroll Y
-WX    EQU $FF4B ; Window Scroll X - 7
-VBK   EQU $FF4F ; VRAM Bank Select
-HDMA1 EQU $FF51 ; DMA Source (High)
-HDMA2 EQU $FF52 ; DMA Source (Low)
-HDMA3 EQU $FF53 ; DMA Destination (High)
-HDMA4 EQU $FF54 ; DMA Destination (Low)
-HDMA5 EQU $FF55 ; DMA Mode/Length/Start
-IE    EQU $FFFF ; Interrupts
-
-INCLUDE "Header.asm"
-INCLUDE "Ben10do Screen.asm"
 
 SECTION "Quick-access Variables", HRAM
-VBlankOccurred: db
-ResetDisallowed: db
+VBlankOccurred:: db
+ResetDisallowed:: db
 
 SECTION "General Variables", WRAM0
-PlayingOnGBA: db
-TempAnimFrame: db
-TempAnimWait: db
+PlayingOnGBA:: db
+TempAnimFrame:: db
+TempAnimWait:: db
 
 StackSize EQU $80
 
@@ -58,13 +23,9 @@ StackSpace: ds StackSize
 StackEnd:
 
 SECTION "Start",HOME[$0150]
-Start:
+Start::
 ; ld c, a already executed
     JumpToOtherBank Setup
-
-
-INCLUDE "StringPrint.asm"
-INCLUDE "Sound/Engine.asm"
 
 
 SECTION "Setup", ROMX
@@ -366,7 +327,7 @@ BattleTextFadeIn:
     jr .Loop
 
 
-FastFadeToBlack:
+FastFadeToBlack::
     call WaitFrame
     ld d, 5 ; Outer counter
 .OuterLoop
@@ -449,7 +410,7 @@ FastFadeToBlack:
     jr nz, .OuterLoop
     ret
 
-FastFadeToWhite:
+FastFadeToWhite::
     call WaitFrame
     ld d, 5 ; Outer counter
 .OuterLoop
@@ -602,11 +563,9 @@ FastFadeToWhite:
     ret
 
 
-INCLUDE "IncompatibleGB.asm"
-
 SECTION "Temp Anim", ROM0
 
-VBlankHandler:
+VBlankHandler::
     push af ; Push everything
     push bc
     push de
@@ -688,7 +647,7 @@ TempAnim:
     ld [TempAnimFrame], a
     jp ReplaceLastTile
 
-HBlankHandler:
+HBlankHandler::
     push af
 
     ld a, [STAT]

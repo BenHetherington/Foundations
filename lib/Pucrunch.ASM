@@ -1,4 +1,4 @@
-INCLUDE "lib/16-bit Macros.inc"
+INCLUDE "lib/16-bitMacros.inc"
 
 ;*
 ;*
@@ -62,7 +62,7 @@ SECTION "Pucrunch", HOME
 ; Entry: HL = Source packed data
 ;        DE = Destination for unpacked data
 
-Unpack:
+Unpack::
     ld16a   OutPtr, de
 
 ; Read the file header & setup variables

@@ -1,4 +1,4 @@
-INCLUDE "Subroutines.asm"
+INCLUDE "SubroutineMacros.inc"
 
 SECTION	"Org $00",ROM0[$00]
 RST_00:

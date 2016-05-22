@@ -1,3 +1,9 @@
+INCLUDE "SubroutineMacros.inc"
+INCLUDE "lib/16-bitMacros.inc"
+INCLUDE "lib/Shift.inc"
+INCLUDE "charmap.asm"
+INCLUDE "StringMacros.inc"
+
 SECTION "Text Box Variables", WRAMX
 ; Current position, for knowing where to put the next character.
 TextTilesPointer: dw         ; The address of the tile to start at.
@@ -13,15 +19,8 @@ PrintSettings: db            ; 0000 0bss: - ss = 00 for normal, 01 for faster, 1
                              ;            - b = 0 for beeps, 1 for no beeps (SFX)
                              ; Remaining bits are yet to be decided (but are currently unused)
 
-SpecialCharactersLimit EQU $80
-BiggestSpecialCharacter EQU $8F
-
-TileID EQU $26
-TilesPosition EQU (TileID << 4) + $9000
-TilesPerLine EQU $120
-
 SECTION "Blank Tile Data", ROMX[$7000]
-BlankTiles:
+BlankTiles::
 REPT $5B0
     db $00
 ENDR
@@ -147,13 +146,8 @@ LetterWidths
     db 1, 2, 2, 5, 5, 1, 2, 1, 2, 2, 5, 3, 5, 5, 5, 5, 7, 6, 6, 7, 7, 6, 7, 7, 4, 4
     ;  .  ,  '  “  ”  :  ;  !  (  )  ?  /  +  -  *  =  _  &  £  (A)(B) +D ⬆︎ ⬇︎ ⬅︎ ➡︎
 
-; Colour Definitions
-WhiteColour EQUS "$FF, $7F"
-RedColour   EQUS "$1F, $00"
-BlueColour  EQUS "$00, $FF"
-GreenColour EQUS "$E0, $03"
 
-ShowTextBox:
+ShowTextBox::
     SwitchWRAMBank BANK(TextTilesPointer)
     xor a
     ld [PrintSettings], a
@@ -262,7 +256,7 @@ OpeningSound
     db %01110011, %00000111
     db %01000100, %10000111
 
-CloseTextBox:
+CloseTextBox::
     ld de, ClosingSound
     ld hl, WY
 
@@ -313,12 +307,12 @@ PlayTextBeep
 
     ret
 
-ClearTextBox:
+ClearTextBox::
 ; Clears all of the text box tiles.
     StartVRAMDMA BlankTiles, TilesPosition, $5B0, 1
     WaitForVRAMDMAToFinish
 
-SetPrintVariables:
+SetPrintVariables::
 ; Sets up the default variables for string printing.
     SwitchWRAMBank BANK(TextTilesPointer)
 
@@ -337,7 +331,7 @@ SetPrintVariables:
 
     ret
 
-PrintString:
+PrintString::
 ; NOTE: Must aim to keep this function compatible with the original GB, except when
 ; GBC-specific characters are included. This is because this proceedure is also used
 ; for the Incompatible GB screen.
@@ -937,7 +931,7 @@ MoveToNextLine:
     jr .MoveToLine3
 
 
-ReplaceLastTile:
+ReplaceLastTile::
 ; assume that *b* has the desired tile no., e.g. the next arrow
     ld a, $84
     ld a, $80
@@ -979,7 +973,7 @@ ReplaceLastTile:
     ld e, 3
     jr .TileCopyLoop
 
-FastFadeText:
+FastFadeText::
 ; A more specialised version of the function that was once above it
 ; Fades out the text
     call WaitFrame
@@ -1027,7 +1021,7 @@ FastFadeText:
     jr nz, .OuterLoop
     ret
 
-SetDefaultTextColours:
+SetDefaultTextColours::
 ; TODO: Put the correct colours here.
     ld a, (8 * 7) | %10000000
     ld [BGPI], a

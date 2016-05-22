@@ -1,3 +1,7 @@
+INCLUDE "SubroutineMacros.inc"
+INCLUDE "StringMacros.inc"
+INCLUDE "charmap.asm"
+
 SECTION "Incompatible GB", ROMX
 
 IncompatibleGBText:
@@ -6,7 +10,7 @@ IncompatibleGBText:
     db "\t\t\t\t\tsupport the\n"
     db "\t\t\t^Original Game Boy.\\"
 
-IncompatibleGB:
+IncompatibleGB::
 ; Play sound #1
     ld a, $0D ; envelope
     ld [NR12], a

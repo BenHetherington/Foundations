@@ -1,7 +1,7 @@
 INCLUDE "Sound/Macros.asm"
 INCLUDE "lib/AddSub1.inc"
-
-INCLUDE "Sound/MusicPointers.asm"
+INCLUDE "lib/Shift.inc"
+INCLUDE "SubroutineMacros.inc"
 
 SECTION "SoundVariables", WRAM0
 ; Must define some important sound-y variables

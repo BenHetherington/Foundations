@@ -1,6 +1,10 @@
+INCLUDE "Sound/Macros.asm"
+
 SECTION "TempSong", ROMX
 
-TempSong:
+; TODO: Make these not need to be exported
+
+TempSong::
     tempo 16
 REPT 100
     note C_4, 2
@@ -13,7 +17,7 @@ REPT 100
     note D_6, 1
 ENDR
 
-TempSongPU2:
+TempSongPU2::
 REPT 100
     note G_3, 2
     note C_4, 2
@@ -26,7 +30,7 @@ REPT 100
     note ___, 1
 ENDR
 
-TempSongWAV:
+TempSongWAV::
 REPT 100
     note C_4, 8
     note G_3, 8

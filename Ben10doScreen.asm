@@ -1,3 +1,5 @@
+INCLUDE "SubroutineMacros.inc"
+
 SECTION "Decompression Work Space", WRAMX, BANK[7]
 ; TODO: Move!
 DecompressionWorkSpace::
@@ -86,7 +88,7 @@ SECTION "Ben10do Screen", ROMX
 ;    db $FF,$7F,$80,$34,$40,$20,$00,$10,$FF,$7F,$A8,$10,$60,$24,$60,$24
 
 CompressedBen10doScreenData:
-INCBIN "Ben10do Screen Data.pu"
+INCBIN "Ben10doScreenData.pu"
 
 ShowBen10doScreen::
     xor a
