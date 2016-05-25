@@ -264,9 +264,9 @@ ProcessSpecialCharacter
     jr PrintString
 
 .PixelAdvance
-    pop hl
     ld a, 1
     call AdvanceTextPosition
+    pop hl
     jr PrintString
 
 .Space
