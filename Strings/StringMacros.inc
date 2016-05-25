@@ -7,6 +7,6 @@ GreenColour EQUS "$E0, $03"
 SpecialCharactersLimit EQU $80
 BiggestSpecialCharacter EQU $8F
 
-TileID EQU $26
+TileID EQU $25
 TilesPosition EQU (TileID << 4) + $9000
 TilesPerLine EQU $120

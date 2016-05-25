@@ -94,6 +94,8 @@ ShowBen10doScreen::
     xor a
     ld [VBK], a ; Use VRAM Bank 0
     ld [STAT], a ; Turn off gradient-y stuffs
+    ld [SCX], a ; Ensure that the screen is centered
+    ld [SCY], a
 
     ld a, %10010001 ; Use tiles at $8800 and map at $9800
     ld [LCDC], a
@@ -113,21 +115,33 @@ ShowBen10doScreen::
 
 .CopyTiles
     StartVRAMDMA Tiles, $8010, $2A0, 1
-    WaitForVRAMDMAToFinish
+    call WaitForVRAMDMAToFinish
 
 .CopyMap
     StartVRAMDMA Map, $98A0, $B0, 1
-    WaitForVRAMDMAToFinish
+    call WaitForVRAMDMAToFinish
+
+.TweakMap
+    call EnsureVBlank
+    ld hl, $9907
+    xor a
+    ld [hl+], a
+    ld [hl+], a
+
+    StartVRAMDMA BlankTiles, $9920, $40, 1
+    call WaitForVRAMDMAToFinish
 
 .CopyMapAttributes
     ld a, 1
     ld [VBK], a
 
     StartVRAMDMA MapAttributes, $98A0, $70, 1
-    WaitForVRAMDMAToFinish
+    call WaitForVRAMDMAToFinish
 
 .CopyDMA
-    StartOAMDMA OAMData
+    ld b, -8   ; x
+    ld c, -82  ; y
+    call MoveBGAndTiles
 
 .CopyPalettes
     ld a, %10000000
@@ -138,33 +152,170 @@ ShowBen10doScreen::
     ld [OBPI], a
     MemCopyFixedDest SprPalettes, OBPD, 64
 
+.Display
     ld a, %10010011
     ld [LCDC], a
-
-    PopWRAMBank
-
-    ld c, 255
-    call WaitFrames
-
-    call FastFadeToWhite
-
-    PushROMBank
-    SwitchROMBank BANK(BlankTiles)
 
     xor a
     ld [VBK], a
 
+    call Animation
+
+    call FastFadeToWhite
+
+.Cleanup
+    PushROMBank
+    SwitchROMBank BANK(BlankTiles)
+
     StartVRAMDMA BlankTiles, $98A0, $B0, 1 ; Clear map
-    WaitForVRAMDMAToFinish
+    call WaitForVRAMDMAToFinish
 
     ld a, 1
     ld [VBK], a
 
     StartVRAMDMA BlankTiles, $98A0, $B0, 1 ; Clear attributes
-    WaitForVRAMDMAToFinish
+    call WaitForVRAMDMAToFinish
 
     StartOAMDMA BlankTiles
 
     PopROMBank
+    PopWRAMBank
 
     ret
+
+
+Animation:
+; e = counter
+; x offset in b
+; y offset in c
+    call WaitFrame
+
+    ; TODO: Check starting and final positions!
+
+.Drop
+    ld e, 3
+    ld b, 0
+    ld c, 30
+    call KeepMoving
+
+.DropBounceUp
+    ld e, 2
+    ld c, -2
+    call KeepMoving
+
+.DropBounceDown
+    ld e, 2
+    ld c, 2
+    call KeepMoving
+
+.Pause1
+    ld c, 11
+    call WaitFrames
+
+.Right1
+    ld e, 2
+    ld b, 1
+    ld c, 0
+    call KeepMoving
+
+.Right2
+    ld e, 4
+    call AddByToMap
+    call KeepMoving
+
+.RightBounce
+    ld e, 1
+    ld b, -1
+    call KeepMoving
+
+.Pause2
+    ld c, 3
+    call WaitFrames
+
+.Ascent1
+    ld e, 1
+    ld b, 0
+    ld c, -1
+    call KeepMoving
+
+.Ascent2
+    ld e, 3
+    call AddBen10doToMap
+    call KeepMoving
+
+.AscentPause
+    call WaitFrame
+
+.AscentGravity
+    ld e, 1
+    ld c, 1
+    call KeepMoving
+
+.Pause3
+    ; TODO: Replace with the second animation phase
+    ld c, 146
+    call WaitFrames
+
+    ret
+
+
+KeepMoving:
+    call MoveBGAndTiles
+    call WaitFrame
+    dec e
+    jr nz, KeepMoving
+    ret
+
+
+MoveBGAndTiles:
+; x offset in b
+; y offset in c
+    push hl
+    push de
+.BGy
+    ld hl, SCY
+    ld a, [hl]
+    sub a, c
+    ld [hl+], a
+
+.BGx
+    ld a, [hl]
+    sub a, b
+    ld [hl], a
+
+.SpritesSetup
+    ld hl, OAMData
+    ld d, 12
+
+.SpritesY
+    ld a, [hl]
+    add a, c
+    ld [hl+], a
+
+.SpritesX
+    ld a, [hl]
+    add a, b
+    ld [hl+], a
+
+.SpriteLoop
+    inc hl
+    inc hl
+    dec d
+    jr nz, .SpritesY
+
+.Finish
+    StartOAMDMA OAMData
+
+    pop de
+    pop hl
+    ret
+
+
+AddByToMap:
+    StartVRAMDMA Map + $60, $9900, $10, 1
+    jp WaitForVRAMDMAToFinish
+
+
+AddBen10doToMap:
+    StartVRAMDMA Map + $80, $9920, $30, 1
+    jp WaitForVRAMDMAToFinish

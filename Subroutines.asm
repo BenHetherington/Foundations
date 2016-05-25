@@ -43,6 +43,11 @@ JumpToOtherBankFunction::
 
 SECTION "GBC Subroutines", ROM0
 
+WaitForVRAMDMAToFinish::
+    ld a, [HDMA5]
+    cp $FF
+    jr nz, WaitForVRAMDMAToFinish
+
 
 SECTION "DMA Wait Location", HRAM
 OAMDMAWait:: ds 8

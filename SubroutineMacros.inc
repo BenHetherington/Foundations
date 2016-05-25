@@ -1,6 +1,8 @@
 ; Hardware macros
 ; TODO: Split out of this if possible
 JOYP  EQU $FF00 ; Joypad
+SB    EQU $FF01 ; Serial buffer
+SC    EQU $FF02 ; Serial control
 DIVI  EQU $FF04 ; Divider
 TMA   EQU $FF06 ; Timer modulo
 TAC   EQU $FF07 ; Timer control
@@ -158,25 +160,18 @@ StartVRAMDMA: MACRO
     ;WARN "DMA Destination address's lower four bits must be 0."
     ;ENDC
 
-    ld a, (\1 >> 8)
+    ld a, ((\1) >> 8)
     ld [HDMA1], a
-    ld a, (\1 & $FF)
+    ld a, ((\1) & $FF)
     ld [HDMA2], a
 
-    ld a, (\2 >> 8)
+    ld a, ((\2) >> 8)
     ld [HDMA3], a
-    ld a, (\2 & $FF)
+    ld a, ((\2) & $FF)
     ld [HDMA4], a
 
-    ld a, (((\3 / $10) - 1) & $7F) | ((\4 & 1) << 7)
+    ld a, ((((\3) / $10) - 1) & $7F) | (((\4) & 1) << 7)
     ld [HDMA5], a
-    ENDM
-
-WaitForVRAMDMAToFinish: MACRO
-.Loop\@
-    ld a, [HDMA5]
-    cp $FF
-    jr nz, .Loop\@
     ENDM
 
 

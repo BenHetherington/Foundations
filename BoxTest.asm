@@ -3,9 +3,9 @@ INCLUDE "lib/16-bitMacros.inc"
 INCLUDE "lib/Shift.inc"
 INCLUDE "SubroutineMacros.inc"
 ;INCLUDE "Hardware.inc"
-INCLUDE "StringMacros.inc"
+INCLUDE "Strings/StringMacros.inc"
 
-INCLUDE "charmap.asm"
+INCLUDE "Strings/charmap.inc"
 
 SECTION "Quick-access Variables", HRAM
 VBlankOccurred:: db
@@ -107,7 +107,7 @@ GameStartup:
     res 4, [hl]
 
     call ShowTextBox
-    ld hl, DemoStringOne
+    ld hl, DemoStringZero
     call PrintString
     call CloseTextBox
 
@@ -197,10 +197,11 @@ GameStartup:
     ; jr .FillerHalt
 
 ;    SwitchSpeed
-    ld hl, FakeRPGText
+    ;ld hl, FakeRPGText
+    ld hl, FileOptionsTest
     call PrintString
 ;    SwitchSpeed
-    call BattleTextFadeIn
+    ; call BattleTextFadeIn
 
 
 .FillerHalt
@@ -242,6 +243,11 @@ WipeSaveData:
     DisableSRAM
     ret
 
+DemoStringZero:
+    db "Last assembled:\n"
+    db "{__DATE__}", "\n"
+    db "{__TIME__}", "~"
+
 DemoStringOne:
     db "Huh?\n_@_", 1, GreenColour, "`````"
     db "Is this a _#1_Plot Coupon?!~\\"
@@ -273,6 +279,11 @@ FakeRPGText:
     db "^_right_^^", "Fight", "\t^_#1_ ", "Magic",  "\t\t ", "Taunt\n"
     db "\t", "Item",  "\t^^ ",    "Tattle", "\t ",   "Run Away", "§", 0, "\\"
 
+FileOptionsTest:
+    db "_@_", 2, GreenColour, "_@_", 1, BlueColour
+    db "What of _#2_File 2_#3_?_#1_\n"
+    db "^_right_^^", "Copy", "\t^^^_#3_ ", "Erase", "\t\t^Cancel\\"
+
 FakeQuicksaveText:
     db "§", %111, "_@_", 1, $00, $00, "_@_", 2, $00, $00, "_#1_" ; Setting max speed, no SFX, black colours
     ;db "Don't turn off\n"
@@ -293,6 +304,12 @@ FakeQuicksaveText:
 ; TODO: Refactor these, since there's tonnes of code reuse!
 
 BattleTextFadeIn:
+; TODO; Redo this
+; Instead, have the colour fade to white, and then fade the selection to blue
+; This enables me to use one less colour, enabling me to use the 'other' spare
+; colour in the text above the selection
+; Also, don't make this battle-specific!
+
     ld c, $40 ; Colour
     ld b, 3 ; Counter
 .Loop

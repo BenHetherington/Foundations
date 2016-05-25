@@ -1,6 +1,6 @@
 INCLUDE "SubroutineMacros.inc"
-INCLUDE "StringMacros.inc"
-INCLUDE "charmap.asm"
+INCLUDE "Strings/StringMacros.inc"
+INCLUDE "Strings/charmap.inc"
 
 SECTION "Incompatible GB", ROMX
 

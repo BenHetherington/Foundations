@@ -1,23 +1,25 @@
 INCLUDE "SubroutineMacros.inc"
 INCLUDE "lib/16-bitMacros.inc"
 INCLUDE "lib/Shift.inc"
-INCLUDE "charmap.asm"
-INCLUDE "StringMacros.inc"
+INCLUDE "Strings/charmap.inc"
+INCLUDE "Strings/StringMacros.inc"
+
+IMPORT PlayTextBeep
 
 SECTION "Text Box Variables", WRAMX
 ; Current position, for knowing where to put the next character.
-TextTilesPointer: dw         ; The address of the tile to start at.
-                             ; Stored big-endian (just because)
-                             ; TODO: Make this little-endian for consistency?
-TextSubtilesPositionX: db    ; The number of pixels across within a tile.
-TextSubtilesPositionY: db    ; The number of pixels down within a tile.
-TextTilesPositionY: db       ; The number of tiles down.
-TextTilesWorkSpace: ds 8 * 4 ; Work space for creating the tiles.
-                             ; Could instead use more general-purpose work space.
-TextColour: db               ; The current text colour.
-PrintSettings: db            ; 0000 0bss: - ss = 00 for normal, 01 for faster, 11 for fastest.
-                             ;            - b = 0 for beeps, 1 for no beeps (SFX)
-                             ; Remaining bits are yet to be decided (but are currently unused)
+TextTilesPointer:: dw         ; The address of the tile to start at.
+                              ; Stored big-endian (just because)
+                              ; TODO: Make this little-endian for consistency?
+TextSubtilesPositionX:: db    ; The number of pixels across within a tile.
+TextSubtilesPositionY:: db    ; The number of pixels down within a tile.
+TextTilesPositionY:: db       ; The number of tiles down.
+TextTilesWorkSpace:: ds 8 * 4 ; Work space for creating the tiles.
+                              ; Could instead use more general-purpose work space.
+TextColour:: db               ; The current text colour.
+PrintSettings:: db            ; 0000 0bss: - ss = 00 for normal, 01 for faster, 11 for fastest.
+                              ;            - b = 0 for beeps, 1 for no beeps (SFX)
+                              ; Remaining bits are yet to be decided (but are currently unused)
 
 SECTION "Blank Tile Data", ROMX[$7000]
 BlankTiles::
@@ -25,7 +27,8 @@ REPT $5B0
     db $00
 ENDR
 
-SECTION "Text Boxes", ROM0
+
+SECTION "String Printing", ROM0
 CharacterTiles
     db $00,$00,$00,$00,$00,$00,$00,$00 ; 00) space/tab/null
     db $78,$84,$84,$FC,$84,$84,$84,$00 ; 01) A
@@ -147,170 +150,11 @@ LetterWidths
     ;  .  ,  '  “  ”  :  ;  !  (  )  ?  /  +  -  *  =  _  &  £  (A)(B) +D ⬆︎ ⬇︎ ⬅︎ ➡︎
 
 
-ShowTextBox::
-    SwitchWRAMBank BANK(TextTilesPointer)
-    xor a
-    ld [PrintSettings], a
-    call EnsureVBlank
-
-.SetUpWindow
-    ld hl, LCDC
-    ld a, %01100000 ; Set the map for the window, and enable the window.
-    or a, [hl]
-    ld [hl], a
-
-.SetInitialWindowPosition
-    ld a, 144
-    ld [WY], a
-    ld a, 7
-    ld [WX], a
-
-.SetPalettes
-    call SetDefaultTextColours
-    call EnsureVBlank
-
-.SetMapAttributes
-    ; TODO: Use DMA
-    ld a, 1
-    ld [VBK], a
-
-    ld hl, $9C00
-    ld de, 12
-    ld b, 6
-    ld c, 20
-.MapAttributesLoop
-    call EnsureVBlank
-    ld a, (7 | %1000) ; TODO: Write a description
-    ld [hl+], a
-    dec c
-    jr nz, .MapAttributesLoop
-
-    add hl, de
-    ld c, 20
-    dec b
-    jr nz, .MapAttributesLoop
-    jr .SetTiles
-
-.SetMapLayout
-    call EnsureVBlank
-    ; TODO: Use DMA
-    ld a, TileID
-    ld [VBK], a ; Use VRAM Bank 0
-
-    ld hl, $9C00 + $21
-    inc a
-    ld b, 5
-    ld c, 18
-    ld de, 14
-.MapLayoutLoop
-    ld [hl+], a
-    inc a
-    dec c
-    jr nz, .MapLayoutLoop
-
-    add hl, de
-    ld c, 18
-    dec b
-    jr nz, .MapLayoutLoop
-    ld de, OpeningSound
-    ld hl, WY
-    jr .AnimationLoop
-
-.AnimationSoundFX
-; TODO: Eliminate this in favour of a much better sound engine
-    ld a, $81
-    ld [NR12], a
-    ld a, [de]
-    ld [NR13], a
-    inc de
-    ld a, [de]
-    ld [NR14], a
-    inc de
-    jr .AnimationLoop
-
-.SetTiles
-    call ClearTextBox
-    ld hl, WY
-
-.AnimationLoop
-; Move the window up by 4px every frame, until it's 48px tall.
-    call WaitFrame
-    ld a, ($100 - 4)
-    add a, [hl]
-    ld [hl], a
-    cp (144 - 4)
-    jr z, .SetMapLayout
-    cp (144 - 24)
-    jr nc, .AnimationSoundFX
-    cp (144 - 48)
-    jr nz, .AnimationLoop
-
-.DelayReturn
-    ld c, 8
-    jp WaitFrames
-
-OpeningSound
-    db %00010001, %10000101
-    db %10110100, %10000101
-    db %01000100, %10000111
-    db %01110011, %00000111
-    db %01000100, %10000111
-
-CloseTextBox::
-    ld de, ClosingSound
-    ld hl, WY
-
-.AnimationLoop
-; Move the window down by 4px every frame, until it's off-screen.
-    call WaitFrame
-    ld a, 4
-    add a, [hl]
-    ld [WY], a
-    cp (144 - 24)
-    jr c, .AnimationSoundFX
-    cp 144
-    jr nz, .AnimationLoop
-
-    ret
-
-.AnimationSoundFX
-; Replace with call to sound engine!
-    ld a, $81
-    ld [NR12], a
-    ld a, [de]
-    ld [NR13], a
-    inc de
-    ld a, [de]
-    ld [NR14], a
-    inc de
-    jr .AnimationLoop
-
-ClosingSound:
-    db %01000100, %10000111
-    db %00000101, %10000111
-    db %01110010, %10000110
-    db %00010101, %00000100
-    db %00010001, %10000101
-
-PlayTextBeep
-    ld a, %10000000 | $3B
-    ld [NR11], a
-
-    ld a, $31
-    ld [NR12], a
-
-    ld a, %10001000
-    ld [NR13], a
-
-    ld a, %11000110
-    ld [NR14], a
-
-    ret
-
 ClearTextBox::
 ; Clears all of the text box tiles.
     StartVRAMDMA BlankTiles, TilesPosition, $5B0, 1
-    WaitForVRAMDMAToFinish
+    call WaitForVRAMDMAToFinish
+    ; fallthrough
 
 SetPrintVariables::
 ; Sets up the default variables for string printing.
@@ -384,8 +228,7 @@ ProcessSpecialCharacter
 ; Loading hl with the address to jump to
     ld a, [hl+]
     ld d, a
-    ld a, [hl+]
-    ld h, a
+    ld h, [hl]
     ld l, d
 
 ; Boing!
@@ -402,7 +245,7 @@ ProcessSpecialCharacter
     jr PrintString
 
 .Tab
-    ld b, 8
+    ld a, 8
     call AdvanceTextPosition
     pop hl
     jr PrintString
@@ -422,12 +265,12 @@ ProcessSpecialCharacter
 
 .PixelAdvance
     pop hl
-    ld b, 1
+    ld a, 1
     call AdvanceTextPosition
     jr PrintString
 
 .Space
-    ld b, 4
+    ld a, 4
     call AdvanceTextPosition
 
     ld hl, PrintSettings
@@ -452,6 +295,7 @@ ProcessSpecialCharacter
 
 .Palette3
     ld a, $03
+    ; fallthrough
 
 .PickPalette
     ld [TextColour], a
@@ -635,23 +479,23 @@ PutChar:
     jp UpdateTextPositions
 
 
-CopyChar:
+CopyChar::
 ; Copies a character tile into the tiles workspace memory.
 ; Assumes that the character to put is in a
 .TileCopy
     push af
     ld de, TextTilesWorkSpace
-    call .TileCopyFunction
+    call .StartTileCopy
 
 .ZeroWorkSpace
     xor a
     ld b, 8 * 3 ; Since we've already filled some of the work space
-    ld h, d     ; Relies on .TileCopyFunction having the next address to write
+    ld h, d     ; Relies on .StartTileCopy having the next address to write
     ld l, e     ; to (TextTilesWorkSpace + (2 * 8)) in the de register. This is done for efficiency.
 .ZeroWorkSpaceLoop
     ld [hl+], a
     dec b
-    jp nz, .ZeroWorkSpaceLoop
+    jr nz, .ZeroWorkSpaceLoop
 
 
 .AddDanglers
@@ -662,53 +506,43 @@ CopyChar:
     jr nz, .pCheck
     ld a, "‡g‡"
     ld de, TextTilesWorkSpace + (2 * 8)
-    jr .TileCopyFunction
+    jr .StartTileCopy
 
 .pCheck
     cp "p"
     jr nz, .qCheck
     ld a, "‡p‡"
     ld de, TextTilesWorkSpace + (2 * 8)
-    jr .TileCopyFunction
-    ret
+    jr .StartTileCopy
 
 .qCheck
     cp "q"
     jr nz, .yCheck
     ld a, "‡q‡"
     ld de, TextTilesWorkSpace + (2 * 8)
-    jr .TileCopyFunction
-    ret
+    jr .StartTileCopy
 
 .yCheck
     cp "y"
     ret nz
     ld a, "‡g‡"
     ld de, TextTilesWorkSpace + (2 * 8)
-    jr .TileCopyFunction
-    ret
+    jr .StartTileCopy
 
 
-.TileCopyFunction
+.StartTileCopy
     ld c, a
     ld b, 0
     sla16 bc, 3
     ld hl, CharacterTiles
     add hl, bc
     ld b, 8
-.TileCopyLoop
-    ld a, [hl+]
-    ld [de], a
-    inc de
-    dec b
-    jr nz, .TileCopyLoop
-    ret
+    jp SmallMemCopyRoutine
 
 
 PrepareChar:
 ; Copies and shifts a character, ready for printing.
 ; Assumes that the character to put is in a
-; Does not handle special values.
 ; A more general function, allowing you to manually copy the work space data elsewhere
     call CopyChar
 
@@ -724,24 +558,21 @@ PrepareChar:
     ld b, 8 ; Inner counter
 
 .RightShiftNewLine
-    ld a, [hl+]
-    ld d, a
-REPT 7
-    inc hl
-ENDR
+    push hl
     ld a, [hl]
-    ld e, a
+    ld de, 8
+    add hl, de
+
+    ld d, a
+    ld e, [hl]
 
 .RightShiftLoop
     srl16 de, 1
     dec c
     jr nz, .RightShiftLoop
 
-    ld a, e
-    ld [hl-], a
-REPT 7
-    dec hl
-ENDR
+    ld [hl], e
+    pop hl
     ld a, d
     ld [hl+], a
 
@@ -753,6 +584,7 @@ ENDR
     pop bc
     dec b
     jr z, .DownShift
+
     push bc
     ld b, 8
     ld hl, TextTilesWorkSpace + (2 * 8)
@@ -760,7 +592,7 @@ ENDR
 
 .DownShift
     ld a, [TextSubtilesPositionY]
-    and %00000111
+    and a, %00000111
     ret z
 
 ; bc is the difference in address between the top and bottom tile
@@ -774,22 +606,11 @@ ENDR
     ld d, $18
 .DownShiftLoop
     ld a, [hl]
-    push bc
+    push hl
     add hl, bc
-    ld [hl-], a
-
-; subtracting bc from hl
-    ld a, b
-    cpl
-    ld b, a
-
-    ld a, c
-    cpl
-    ld c, a
-
-    inc bc
-    add hl, bc
-    pop bc
+    ld [hl], a
+    pop hl
+    dec hl
 
     dec d
     jr z, .RemoveDebris
@@ -799,11 +620,11 @@ ENDR
     jr z, .StartBottomLeftTile
     jr nc, .DownShiftLoop
 
-    cp $18 - $8
+    cp $18 - $8 + 1
     jr nc, .DownShiftLoop
 
     dec a
-    and %100
+    and a, %100
     jr nz, .StartTopToBottomTileOverflow
     jr .StopTopToBottomTileOverflow
 
@@ -835,7 +656,7 @@ ENDR
     ld hl, TextTilesWorkSpace + $8
     jr .RemoveDebrisLoop
 
-Convert1BitTileLine
+Convert1BitTileLine::
 ; Assumes that the 1-bit tile line to convert is in a
 ; Assumes that the desired colouration filter is in e (0, 1, 2, or 3)
 ; Outputs the resultant tile line into bc
@@ -861,16 +682,16 @@ UpdateTextPositions:
     ld b, 0
     ld c, a
     add hl, bc
-    ld b, [hl]
-    inc b
-    jr AdvanceTextPosition
+    ld a, [hl]
+    inc a
+    ; fallthrough
 
 
 AdvanceTextPosition:
-; Assume that b contains the number to advance by.
-    ld a, [TextSubtilesPositionX]
-    add a, b
-    ld [TextSubtilesPositionX], a
+; Assume that a contains the number to advance by.
+    ld hl, TextSubtilesPositionX
+    add a, [hl]
+    ld [hl], a
 
     ld d, a
     ld a, 7
@@ -879,27 +700,28 @@ AdvanceTextPosition:
 
 .OverflowIntoNewTile
     cpl
-    ; inc a
-    ld [TextSubtilesPositionX], a
+    ld [hl], a
 
-    ld a, [TextTilesPointer]
-    add a, $10
-    ld [TextTilesPointer], a
+    ld hl, TextTilesPointer
+    ld a, $10
+    add a, [hl]
+    ld [hl+], a
 
     ret nc
 
-    ld a, [TextTilesPointer + 1]
-    inc a
-    ld [TextTilesPointer + 1], a
-
+    inc [hl]
     ret
 
 MoveToNextLine:
+    ld hl, TextSubtilesPositionX
     xor a
-    ld [TextSubtilesPositionX], a
-    ld a, [TextTilesPositionY]
-    inc a
-    ld [TextTilesPositionY], a
+    ld [hl+], a
+    inc hl
+    inc [hl]
+    ld a, [hl]
+
+    ld hl, TextTilesPointer + 1
+
     cp 1
     jr z, .MoveToLine2
     cp 2
@@ -908,18 +730,18 @@ MoveToNextLine:
 
 .MoveToLine2
     ld a, (TilesPosition + TilesPerLine + $10) >> 8
-    ld [TextTilesPointer + 1], a
+    ld [hl-], a
     ld a, (TilesPosition + TilesPerLine + $10) & $FF
-    ld [TextTilesPointer], a
+    ld [hl], a
     ld a, 4
     ld [TextSubtilesPositionY], a
     ret
 
 .MoveToLine3
     ld a, (TilesPosition + (3 * TilesPerLine) + $10) >> 8
-    ld [TextTilesPointer + 1], a
+    ld [hl-], a
     ld a, (TilesPosition + (3 * TilesPerLine) + $10) & $FF
-    ld [TextTilesPointer], a
+    ld [hl], a
     xor a
     ld [TextSubtilesPositionY], a
     ret
@@ -930,96 +752,6 @@ MoveToNextLine:
     ld [TextTilesPositionY], a
     jr .MoveToLine3
 
-
-ReplaceLastTile::
-; assume that *b* has the desired tile no., e.g. the next arrow
-    ld a, $84
-    ld a, $80
-    ld a, b
-    call CopyChar
-
-; Source in bc
-; Destination in hl
-; Current tile in a
-; Counter in d
-; e has the colouration
-    ld a, 1
-    ld [VBK], a
-    ld bc, TextTilesWorkSpace
-    ld hl, TilesPosition + (4 * TilesPerLine) ; $8480
-    ld e, 1
-    push de
-    ld e, 3
-    ld d, 8
-
-.TileCopyLoop
-    ld a, [bc]
-    push bc
-    call Convert1BitTileLine
-    call EnsureVBlank
-    ld a, b
-    ld [hl+], a
-    ld a, c
-    ld [hl+], a
-    pop bc
-    inc bc
-    dec d
-    jr nz, .TileCopyLoop
-
-    pop de
-    dec e
-    ret z
-    push de
-    ld e, 3
-    jr .TileCopyLoop
-
-FastFadeText::
-; A more specialised version of the function that was once above it
-; Fades out the text
-    call WaitFrame
-    ld d, 3 ; Outer counter
-.OuterLoop
-    ld b, 4 ; Number of colours to modify
-    ld c, 56 ; Address
-.BGPaletteLoop
-    call EnsureVBlank
-
-; Load the palette into hl
-    inc c
-    ld a, c
-    ld [BGPI], a
-
-    ld a, [BGPD]
-    ld h, a
-
-    dec c
-    ld a, c
-    inc c
-    inc c
-
-    set 7, a ; Increment after writing
-    ld [BGPI], a
-    ld a, [BGPD]
-    ld l, a
-
-; Manipulate the palette data
-    call EnsureVBlank
-    srl16 hl, 1
-    ld a, l
-    and %11100111
-    ld [BGPD], a
-
-    ld a, h
-    and %00011100
-    ld [BGPD], a
-
-    dec b
-    jr nz, .BGPaletteLoop
-
-    call WaitFrame
-    dec d
-    jr nz, .OuterLoop
-    ret
 
 SetDefaultTextColours::
 ; TODO: Put the correct colours here.

@@ -73,7 +73,7 @@ SECTION	"Header",ROM0[$100]
 	db $BB,$BB,$67,$63,$6E,$0E,$EC,$CC,$DD,$DC,$99,$9F,$BB,$B9,$33,$3E
 
 	; Game title
-    db $46,$4F,$55,$4E,$44,$41,$54,$49,$4F,$4E,$53 ; FOUNDATIONS in ASCII
+    db "FOUNDATIONS" ; FOUNDATIONS in ASCII
        ;0123456789A
 
 	; Product code
