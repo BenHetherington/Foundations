@@ -11,7 +11,7 @@ LINK_FLAGS = -m "$(MAP_FILENAME)" -n "$(SYM_FILENAME)"
 
 SOURCE_FILES = $(wildcard *.asm) $(wildcard */*.asm) $(wildcard */*/*.asm)
 OBJECT_FILES = $(patsubst %.asm, $(BUILD_DIR)%.o, $(SOURCE_FILES))
-INCLUDE_FILES = $(wildcard *.inc) $(wildcard */*/.inc)
+INCLUDE_FILES = $(wildcard *.inc) $(wildcard */*/.inc) $(wildcard */*/*/.inc)
 
 # Linking - produces the final .gbc file (and corrects its checksums)
 $(ROM_FILENAME) : $(OBJECT_FILES)
@@ -24,6 +24,8 @@ ifeq ($(wildcard $(BUILD_DIR)$(dir $<).),)
 	mkdir -p "$(BUILD_DIR)$(dir $<)"
 endif
 	rgbasm -o $@ $<
+
+Engine.asm : Interface.s
 
 # Binary files to be included
 Ben10doScreen.asm : Ben10doScreenData.pu

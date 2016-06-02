@@ -41,12 +41,52 @@ JumpToOtherBankFunction::
     jp hl
 
 
+SECTION "SRAM Enable/Disable", ROM0
+EnableSRAM::
+    ld a, $0A
+    ld [ResetDisallowed], a
+    ld [SRAMEnableLocation], a
+    ret
+
+
+DisableSRAM::
+    xor a
+    ld [SRAMEnableLocation], a
+    ld [ResetDisallowed], a
+    ret
+
+
 SECTION "GBC Subroutines", ROM0
+
+KEY1 EQU $FF4D
+
+SwitchSpeed::
+    ld a, 1
+    ld [KEY1], a
+    stop
+    ret
+
+EnableDoubleSpeed::
+; Switches to double speed if we're not already in double speed mode.
+    ld a, [KEY1]
+    bit 7, a
+    ret nz
+.Switch
+    jr SwitchSpeed
+
+DisableDoubleSpeed::
+; Switches to regular speed if we're currently in double speed mode.
+    ld a, [KEY1]
+    bit 7, a
+    ret z
+.Switch
+    jr SwitchSpeed
 
 WaitForVRAMDMAToFinish::
     ld a, [HDMA5]
     cp $FF
     jr nz, WaitForVRAMDMAToFinish
+    ret
 
 
 SECTION "DMA Wait Location", HRAM
@@ -251,7 +291,7 @@ SmallMultiply::
 ; Multiplies two 8-bit numbers, returning the result in an 8-bit number
 ; Uses less registers, and stops early if possible.
 ; Returns the result in a
-; ? = operand 1; ? = operand 2
+; b = operand 1; ? = operand c
 ; Adapted from Multiply, which was adapted from WordMultiply
 
     ld d, 8 ; No. of bits to process

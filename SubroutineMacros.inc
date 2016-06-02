@@ -6,12 +6,16 @@ SC    EQU $FF02 ; Serial control
 DIVI  EQU $FF04 ; Divider
 TMA   EQU $FF06 ; Timer modulo
 TAC   EQU $FF07 ; Timer control
+NR10  EQU $FF10 ; PU1 Sweep
 NR11  EQU $FF11 ; PU1 Length & Wave duty
 NR12  EQU $FF12 ; PU1 Envelope
 NR13  EQU $FF13 ; PU1 Freq low
 NR14  EQU $FF14 ; PU1 Freq high +
 NR23  EQU $FF18 ; PU2 Freq low
+NR30  EQU $FF1A ; WAV Sound on/off
 NR33  EQU $FF1D ; WAV Freq low
+NR50  EQU $FF24 ; Sound Master Volume
+NR51  EQU $FF25 ; Sound Panning
 LCDC  EQU $FF40 ; LCD Control
 STAT  EQU $FF41 ; LCDC Status
 SCY   EQU $FF42 ; Background Scroll Y
@@ -81,20 +85,6 @@ PopROMBank: MACRO
     ENDM
 
 
-EnableSRAM: MACRO
-    ld a, $0A
-    ld [ResetDisallowed], a
-    ld [SRAMEnableLocation], a
-    ENDM
-
-
-DisableSRAM: MACRO
-    xor a
-    ld [SRAMEnableLocation], a
-    ld [ResetDisallowed], a
-    ENDM
-
-
 SwitchSRAMBank: MACRO
     ld a, \1
     ld [SRAMBankSwitchLocation], a
@@ -118,36 +108,8 @@ PopWRAMBank: MACRO
     ld [WRAMBankSwitchLocation], a
     ENDM
 
-; DMA & Double Speed
 
-KEY1 EQU $FF4D ; TODO: Move into a seperate include file
-
-SwitchSpeed: MACRO
-    ld a, 1
-    ld [KEY1], a
-    stop
-    ENDM
-
-EnableDoubleSpeed: MACRO
-; Switches to double speed if we're not already in double speed mode.
-    ld a, [KEY1]
-    bit 7, a
-    jr nz, .Done\@
-.Switch\@
-    SwitchSpeed
-.Done\@
-    ENDM
-
-DisableDoubleSpeed: MACRO
-; Switches to regular speed if we're currently in double speed mode.
-    ld a, [KEY1]
-    bit 7, a
-    jr z, .Done\@
-.Switch\@
-    SwitchSpeed
-.Done\@
-    ENDM
-
+; DMA
 
 StartVRAMDMA: MACRO
 ; Assuming the DMA Wait Routine is in HRAM already

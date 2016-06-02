@@ -36,11 +36,15 @@ Setup:
     cp $11
     jp nz, .OriginalGameBoy
 
+.GBACheck
+    xor a
     bit 0, b
-    jr z, GameStartup
+    jr z, .WriteGBAByte
 
-.PlayingOnGBA
-    ld a, 1
+.IsPlayingOnGBA
+    inc a
+
+.WriteGBAByte
     ld [PlayingOnGBA], a
     jr GameStartup
 
@@ -56,7 +60,7 @@ GameStartup:
     ld sp, StackEnd - 1
 
 ; Use single speed mode, if we were in double speed when we reset
-    DisableDoubleSpeed
+    call DisableDoubleSpeed
 
 ; Set up timer
     ld [TMA], a ; Reset the timer modulo value
@@ -79,7 +83,7 @@ GameStartup:
     MemCopy DMAWaitInROM, OAMDMAWait, 8
 
 .SRAMTest
-    EnableSRAM
+    call EnableSRAM
 
     ld hl, $A000
     ld c, [hl]
@@ -91,7 +95,7 @@ GameStartup:
 
     ld [hl], c
 
-    DisableSRAM
+    call DisableSRAM
 
     ld a, b
     or a
@@ -122,7 +126,7 @@ GameStartup:
     call ClearTextBox
     call SetDefaultTextColours
 
-    EnableDoubleSpeed
+    call EnableDoubleSpeed
 
     ld hl, SavingString
     call PrintString
@@ -162,7 +166,7 @@ GameStartup:
 
     call FastFadeToBlack
 
-    DisableDoubleSpeed
+    call DisableDoubleSpeed
 
     ; TODO: Must include a suitable seed in a
     ld a, [$DD9B] ; This is very temporary
@@ -221,7 +225,7 @@ WipeSaveData:
     ld a, $01
     ld [VBK], a
 
-    EnableSRAM
+    call EnableSRAM
 
     ld b, 15 ; Number of banks
 .OuterSaveLoop
@@ -240,7 +244,7 @@ WipeSaveData:
     cp $FF
     jr nz, .OuterSaveLoop
 
-    DisableSRAM
+    call DisableSRAM
     ret
 
 DemoStringZero:
@@ -715,7 +719,7 @@ SECTION "VerifyChecksums", ROM0
 
 VerifyChecksum:
 ; Leaves 0 in a if the checksum is correct, 1 otherwise
-    EnableDoubleSpeed
+    call EnableDoubleSpeed
     PushROMBank
     SwitchROMBank 0
     ld de, 0 ; Checksum
@@ -788,6 +792,6 @@ VerifyChecksum:
 .CleanUp
     ld b, a
     PopROMBank
-    DisableDoubleSpeed
+    call DisableDoubleSpeed
     ld a, b
     ret

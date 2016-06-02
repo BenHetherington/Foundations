@@ -1,233 +1,42 @@
-INCLUDE "Sound/Macros.asm"
+INCLUDE "Sound/Macros.inc"
 INCLUDE "lib/AddSub1.inc"
 INCLUDE "lib/Shift.inc"
 INCLUDE "SubroutineMacros.inc"
 
-SECTION "SoundVariables", WRAM0
-; Must define some important sound-y variables
+CalculateChannelAddress: MACRO
+; Given PU1's sound register, calculate the equivalent for the channel in c
+; The result will be in a. This *will* modify c, so back it up beforehand!
+    ld a, c
+; Multiply by 5
+    rlca
+    srl c
+    add a, c
 
-MuTempo: db
-MuCounter: db
-FXTempo: db
-FXCounter: db
+    ld c, ((\1) & $FF)
+    add a, c
+    ld c, a
+ENDM
 
-; Waits - equivelent to length of note, decremented and
-PU1MuWait: db
-PU1FXWait: db
-PU2MuWait: db
-PU2FXWait: db
-WAVMuWait: db
-NOIMuWait: db
-NOIFXWait: db
+CalculateBackupAddress: MACRO
+; Given the backup memory address for PU1Mu, calculate the equivalent for the channel in c
+; The result will be in hl.
+; TODO: Ensure that the memory layout suits this!
+    ld a, c
 
-; For remembering where we were!
-; If address bank is 0, assume all mu/all FX channels are not active
-; If bit 7 of MSB is set, assume it's not active <- (actual implementation)
-MuAddressBank: db
-FXAddressBank: db
-PU1MuAddress: dw
-PU1FXAddress: dw
-PU2MuAddress: dw
-PU2FXAddress: dw
-WAVMuAddress: dw
-WAVFXAddress: dw
-NOIMuAddress: dw
-NOIFXAddress: dw
+    add a, (\1) % $100
+    ld l, a
+    adc a, (\1) / $100
+    sub a, l
+    ld h, a
+ENDM
 
-; For returning from a called phrase
-; Must be in same bank as original phrase
-PU1MuOriginalAddress: dw
-PU1FXOriginalAddress: dw
-PU2MuOriginalAddress: dw
-PU2FXOriginalAddress: dw
-WAVMuOriginalAddress: dw
-WAVFXOriginalAddress: dw
-NOIMuOriginalAddress: dw
-NOIFXOriginalAddress: dw
-
-; For looping called phrases
-PU1MuLoopCounter: db
-PU1FXLoopCounter: db
-PU2MuLoopCounter: db
-PU2FXLoopCounter: db
-WAVMuLoopCounter: db
-WAVFXLoopCounter: db
-NOIMuLoopCounter: db
-NOIFXLoopCounter: db
-
-; Backup for if the envelope is changed by FX channel
-PU1MuEnvelopeBackup: db
-PU2MuEnvelopeBackup: db
-WAVMuEnvelopeBackup: db
-NOIMuEnvelopeBackup: db
-
-; Backup for if the sweep is changed by FX channel
-PU1MuSweepBackup: db
-
-; Backup for if the waveform is changed by FX channel
-PU1MuWaveformBackup: db
-PU2MuWaveformBackup: db
-
-; Backup for if the wave data is changed by FX channel
-WAVMuWaveDataBackup: db
-
-; Backup for if the length data is changed by FX channel
-PU1MuLengthBackup: db
-PU2MuLengthBackup: db
-NOIMuLengthBackup: db
-
-; Tables
-; high nibble (7-4) = Table ID; low nibble (3-0) = Table Position
-PU1MuTable: db
-PU1FXTable: db
-PU2MuTable: db
-PU2FXTable: db
-WAVMuTable: db
-WAVFXTable: db
-NOIMuTable: db
-NOIFXTable: db
-
-; Slide/vibrato active flags
-VibratoOrSlideActive: db ; 1 if either is active, 0 if not; bit 7 = PU1Mu, ..., 0 = NOIFX
-VibratoActive: db        ; 1 if vibrato, 0 if slide; as above
-
-; Slide destinations or vibrato bases
-PU1MuSlideDestOrVibratoBase: db
-PU1FXSlideDestOrVibratoBase: db
-PU2MuSlideDestOrVibratoBase: db
-PU2FXSlideDestOrVibratoBase: db
-WAVMuSlideDestOrVibratoBase: db
-WAVFXSlideDestOrVibratoBase: db
-NOIMuSlideDestOrVibratoBase: db
-NOIFXSlideDestOrVibratoBase: db
-
-; Slide or vibrato amounts
-; high nibble (7-4) = Mu; low nubble (3-0) = FX
-PU1SlideOrVibratoAmount: db
-PU2SlideOrVibratoAmount: db
-WAVSlideOrVibratoAmount: db
-NOISlideOrVibratoAmount: db
-
-SoundVariableBytes EQU 86
+INCLUDE "Sound/Variables.inc"
 
 SECTION "SoundEngine", ROM0
 FrequencyTable:
     INCBIN "Sound/FrequencyTable"
 
-InitSoundEngine::
-    ;PushWRAMBank
-    ;SwitchWRAMBank BANK(MuTempo)
-
-    ; TODO: Replace with generic memory-clearing function
-
-    xor a
-    ld b, SoundVariableBytes
-    ld hl, MuTempo
-.Loop
-    ld [hl+], a
-    dec b
-    jr nz, .Loop
-
-    ; PopWRAMBank
-    ret
-
-PlayMusic::
-; TODO: Start playing some sweet music
-; Assume that a contains the song to be played
-    push hl
-    push bc
-
-    ld hl, MusicPointers
-    ld c, a
-    ld b, 0
-
-    sla16 bc, 3
-    add a, c
-    jr nc, .Continue
-
-.Carry
-    inc b
-
-.Continue
-    ld c, a
-    add hl, bc ; hl now contains the address to the song data
-
-    PushROMBank
-    SwitchROMBank BANK(MusicPointers)
-
-    ;PushWRAMBank
-    ;SwitchWRAMBank BANK(MuAddressBank)
-
-    ; TODO: Use a generic memory-copying subroutine, if possible
-
-.GetBank
-    ld a, [hl+]
-    ld [MuAddressBank], a
-
-.PU1
-    ld a, [hl+]
-    ld [PU1MuAddress], a
-    ld a, [hl+]
-    ld [PU1MuAddress + 1], a
-
-.PU2
-    ld a, [hl+]
-    ld [PU2MuAddress], a
-    ld a, [hl+]
-    ld [PU2MuAddress + 1], a
-
-.WAV
-    ld a, [hl+]
-    ld [WAVMuAddress], a
-    ld a, [hl+]
-    ld [WAVMuAddress + 1], a
-
-.NOI
-    ld a, [hl+]
-    ld [NOIMuAddress], a
-    ld a, [hl]
-    ld [NOIMuAddress + 1], a
-
-.CleanUp
-    ld a, 1
-    ld [MuCounter], a
-    ld [PU1MuWait], a
-    ld [PU2MuWait], a
-    ld [WAVMuWait], a
-    ld [NOIMuWait], a
-
-    ; PopWRAMBank
-    PopROMBank
-    pop bc
-    pop hl
-    ret
-
-PlaySFX::
-; TODO: Start playing a sound effect
-    ret
-
-SoundEngineUpdate::
-; Updates the music and FX into the next frame.
-; Assume that all registers are destroyed after the call.
-    ;PushWRAMBank
-    ;SwitchWRAMBank BANK(MuTempo)
-    PushROMBank
-
-CheckIfMusicIsActive
-    ld a, [MuAddressBank]
-    or a
-    jr nz, UpdateMusic
-
-CheckIfSFXIsActive
-    ld a, [FXAddressBank]
-    or a
-    jr nz, UpdateSFX
-    
-FinishSoundEngineUpdate
-    PopROMBank
-    ; PopWRAMBank
-    ret
-
+INCLUDE "Sound/Interface.s"
 
 UpdateMusic
     SwitchROMBank [MuAddressBank]
@@ -284,13 +93,12 @@ UpdateSFX
 
 
 UpdateChannel
+; TODO: In future, perhaps switch bc and de? Major refactoring!
 ; b = counter (e.g. MuCounter)
 ; c = channel no. (0 = PU1Mu, 7 = NOIFX)
 ; NOTE: Modifies de; push it to the stack if needed
     push hl
     push bc
-
-    ; TODO: Reimplement using vector table
 
 .CheckCounter
     ld b, a
@@ -322,7 +130,7 @@ UpdateChannel
 .CheckNoteCommand
     ld a, [hl+]
     cp CommandByte
-    jr nc, .CheckEnvelopeCommand
+    jp nc, .ProcessCommand ; TODO: Make jr?
 
 .NoteCommand
     ; TODO: Deal with $00
@@ -335,53 +143,30 @@ UpdateChannel
     sla e
     add hl, de
 
-; Putting the frequency into de
-; TODO: Replace with 16-bit copy
-    ld a, [hl+]
-    ld e, a
-    ld a, [hl]
-    ld d, a
-
 ; Calculating the destination address
 ; TODO: Sort out noise channel
     ld b, c
-    srl c ; a is now 0-3, for each channel
 
-.PU1Check
-    inc c
-    dec c
-    jr nz, .PU2Check
+    CalculateChannelAddress NR13
 
-.PU1Destination
-    ld c, (NR13 & $FF)
-    jr .WriteToDestination
-
-.PU2Check
-    dec c
-    jr nz, .WAVCheck
-
-.PU2Destination
-    ld c, (NR23 & $FF)
-    jr .WriteToDestination
-
-.WAVCheck
-    dec c
-    jr nz, .CleanUp ; TODO: Change this to somewhere sensible!
-
-.WAVDestination
-    ld c, (NR33 & $FF)
+; Putting the frequency into a and d
+    ld a, [hl+]
+    ld d, [hl]
 
 .WriteToDestination
-    ld a, e
     ld [$FF00+c], a
     inc c
     ld a, d
+    set 6, a ; TODO: Set finite length only if necessary
     set 7, a ; Restart sound; TODO: Set only if necessary
     ld [$FF00+c], a
 
 .CleanUp
     ld c, b
     pop hl
+
+    ; TODO: Set note length (i.e. NRx1 value!) from PU1MuLength, etc.
+    ; TODO: Turn on the wave channel, if necessary!
 
 .GetLength
     ld a, [hl+]
@@ -394,22 +179,51 @@ UpdateChannel
     ld [hl], a
     pop hl
 
-    jr .FinishCommandLoop
+    jp .FinishCommandLoop
+
+.ProcessCommand
+; Deals with the non-note commands
+    sla a
+
+; Checking that an invalid character isn't used
+    cp BiggestCommand
+    ret nc ; TODO: Decide what to do if an invalid command is found
+
+    push hl
+
+; Loading the address in the vector table
+    add a, .CommandsVector % $100
+    ld l, a
+    adc a, .CommandsVector / $100
+    sub a, l
+    ld h, a
+
+; Loading hl with the address to jump to
+    ld a, [hl+]
+    ld h, [hl]
+    ld l, a
+
+; Boing!
+    jp [hl]
     
 
-.CheckEnvelopeCommand
-    ;ld b, b
-    ;jr .CheckNoteCommand
+.Envelope
+    ; TODO: Should probably save to the backup envelope in memory, if necessary
+    ld d, c ; Backing up c
+    CalculateChannelAddress NR12
 
-    ; TODO: Implement!
+    pop hl
+    ld a, [hl+]
+    ld [$FF00+c], a
+
+    ld c, d ; Restoring c
+    jr .CheckNoteCommand
 
 
-.CheckTempoCommand
-    cp TempoByte
-    jr nz, .CheckNoteCommand
 
 .Tempo
-    bit 2, a
+    pop hl
+    bit 2, c
     jr nz, .FXTempo
 
 .MuTempo
@@ -425,11 +239,147 @@ UpdateChannel
     jr .GetNextCommandLoop
 
 
-.CheckTableCommand
+.Jump
+    pop hl
+    ld a, [hl+]
+    ld h, [hl]
+    ld l, a
+    jp .GetNextCommandLoop
+
+
+.Placeholder
     ld b, b
-    jr .CheckNoteCommand
-    ; cp TableByte
-    ; jr nz, .CheckNoteCommand
+    pop hl
+    jp .CheckNoteCommand ; TODO: Make jr?
+
+.MasterVol
+    pop hl
+    ld a, [hl+]
+    ld [NR50], a
+    jp .CheckNoteCommand ; TODO: Make jr?
+
+.Pan
+    pop hl
+    ld a, [hl+]
+    ld e, %11101110
+    ld d, c
+    srl d
+    inc d
+    dec d ; TODO: Find better way of checking d without affecting a
+    jr z, .ModifyPanning
+
+.PanLoop
+    rlc e
+    rlca
+    dec d
+    jr nz, .PanLoop
+
+.ModifyPanning
+    ld d, a
+    ld a, [NR51]
+    and a, e
+    or a, d
+    ld [NR51], a
+
+    jp .CheckNoteCommand ; TODO: Make jr?
+
+.Sweep
+    pop hl
+    ld a, [hl+]
+    ld [NR10], a
+    jp .CheckNoteCommand ; TODO: Make jr?
+
+.Waveform
+    CalculateBackupAddress PU1MuLength
+    ld e, [hl]
+
+    pop hl
+    ld d, c
+    CalculateChannelAddress NR11
+
+    ld a, [hl+]
+    or a, e
+    ld [$FF00+c], a
+
+    ld c, d
+    jp .CheckNoteCommand ; TODO: Make jr?
+
+.WaveData
+    pop hl
+    ld a, [hl+]
+    push hl
+
+    ld e, a
+
+; Simulating a left-shift by 4 into de
+    swap a
+    and %00001111
+    ld d, a
+
+    ld a, e
+    swap a
+    and %11110000
+    ld e, a
+
+    ld hl, WaveData
+    add hl, de
+
+; hl now contains the wave to copy
+    ld de, $FF30 ; Wave data location
+    push bc
+
+    ld b, $10
+
+    xor a
+    ld [NR30], a
+    call SmallMemCopyRoutine
+
+    pop bc
+    pop hl
+    jp .CheckNoteCommand ; TODO: Make jr?
+
+.Length
+    ld b, b
+    pop hl
+    ld a, [hl+]
+
+    cp 63
+    jr nc, .InfiniteLength
+
+.FiniteLength
+    push hl
+
+    ld e, a
+    CalculateBackupAddress PU1MuLength
+    ld [hl], e
+    pop hl
+
+    ld d, c
+    CalculateChannelAddress NR11
+
+    ld a, [$FF00+c]
+    and a, %11000000
+    or a, e
+    ld [$FF00+c], a
+
+    ld c, d
+    jr .EndLength
+
+.InfiniteLength
+    ; TODO: Handle inf
+    ; fallthrough
+
+.EndLength
+    jp .CheckNoteCommand ; TODO: Make jr?
+
+.InlineWaveData
+    pop hl
+    ld de, $FF30 ; Wave data location
+    push bc
+    ld b, $10
+    call SmallMemCopyRoutine
+    pop bc
+    jp .CheckNoteCommand ; TODO: Make jr?
 
 .FinishCommandLoop
     push hl             ; Writing the new address into memory
@@ -445,10 +395,30 @@ UpdateChannel
     ld a, d
     ld [hl], a
 
-    jr .CheckVibratoAndSlide
+    jp .CheckVibratoAndSlide ; TODO: Make jr?
 
+.CommandsVector
+; TODO: Update this as things get implemented
+    dw .Envelope        ; Envelope
+    dw .Tempo           ; Tempo
+    dw .Placeholder     ; Table
+    dw .Placeholder     ; Slide
+    dw .MasterVol       ; Master vol
+    dw .Pan             ; Pan
+    dw .Sweep           ; Sweep
+    dw .Placeholder     ; Vibrato
+    dw .Waveform        ; Waveform
+    dw .WaveData        ; Waveform data
+    dw .Length          ; Length
+    dw .Placeholder     ; Microtuning
+    dw .InlineWaveData  ; Inline waveform data
+    dw .Jump            ; Jump
+    dw .Placeholder     ; Call
+    dw .Placeholder     ; Ret
+    dw .Placeholder     ; End
 
 CalculateAddress
+; TODO: Does this need to be a subroutine? Replace with 16-bit macro?
 ; Returns with the address in hl
 ; c = channel no. (as UpdateChannel)
 ; Modifies hl, b, and a
@@ -459,9 +429,10 @@ CalculateAddress
     srl c
 
     ld a, [hl+] ; LSB
-    ld b, a
-    ld a, [hl]  ; MSB
-
-    ld h, a
-    ld l, b
+    ld h, [hl]  ; MSB
+    ld l, a
     ret
+
+WaveData:
+    ; ID = $00; Sawtooth Wave (should probably change this from the default LSDJ one!)
+    db $8E,$CD,$CC,$BB,$AA,$A9,$99,$88,$87,$76,$66,$55,$54,$43,$32,$31

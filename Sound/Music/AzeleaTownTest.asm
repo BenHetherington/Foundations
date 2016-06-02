@@ -1,4 +1,4 @@
-INCLUDE "Sound/Macros.asm"
+INCLUDE "Sound/Macros.inc"
 
 SECTION "Azelea Town Test", ROMX
 
@@ -9,7 +9,9 @@ SECTION "Azelea Town Test", ROMX
 
 AzeleaTownTestPU1::
     tempo $0B
-REPT 100
+    envelope $F1
+    waveform 50
+
 REPT 2
     note A_4, 2
     note D_5, 1
@@ -23,6 +25,7 @@ REPT 2
     note D_5, 2
 ENDR
 
+
 REPT 2
     note G_4, 2
     note C_5, 1
@@ -35,4 +38,5 @@ REPT 2
     note D_5, 1
     note C_5, 2
 ENDR
-ENDR
+
+    soundjp AzeleaTownTestPU1

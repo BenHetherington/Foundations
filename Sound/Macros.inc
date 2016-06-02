@@ -139,35 +139,40 @@ A#B EQU $6B
 B_B EQU $6C
 
 ; Pan equates
-LR EQU %11
-L_ EQU %10
-_R EQU %01
-__ EQU %00
+LR EQU %00010001
+L_ EQU %00010000
+_R EQU %00000001
+__ EQU %00000000
+
+; Wave equates (for use with wavedata)
+SawtoothWave EQU $00
+
+; TODO: Deal with $6D-$7F
 
 ; Command bytes
-; (Numbers less than $6D are reserved for notes)
-CommandByte EQU $6D
+; (Numbers less than $80 are reserved for notes)
+CommandByte EQU $80
+BiggestCommand EQU $90
 
-EnvelopeByte EQU $70
-WaveVolumeByte EQU $71
-TempoByte EQU $72
-TableByte EQU $73
-SlideByte EQU $74
-MasterVolByte EQU $75
-PanByte EQU $76
-SweepByte EQU $77
-VibratoByte EQU $78
-WaveformByte EQU $79
-WaveDataByte EQU $7A
-InlineWaveDataByte EQU $7D
-LengthByte EQU $7B
-MicrotuneByte EQU $7C
+EnvelopeByte EQU $80
+TempoByte EQU $81
+TableByte EQU $82
+SlideByte EQU $83
+MasterVolByte EQU $84
+PanByte EQU $85
+SweepByte EQU $86
+VibratoByte EQU $87
+WaveformByte EQU $88
+WaveDataByte EQU $89
+InlineWaveDataByte EQU $8C
+LengthByte EQU $8A
+MicrotuneByte EQU $8B
 
 ; Organisational bytes
-SoundJPByte EQU $F0
-SoundCallByte EQU $F1
-SoundRetByte EQU $F2
-SoundEndByte EQU $FF
+SoundJPByte EQU $8D
+SoundCallByte EQU $8E
+SoundRetByte EQU $8F
+SoundEndByte EQU $90
 
 ; Command macros
 
@@ -181,8 +186,7 @@ envelope: MACRO
     ENDM
 
 vol: MACRO
-    ; TODO: Can merge into one byte (2-bit)
-    db WaveVolumeByte
+    db EnvelopeByte
     IF \1 < 0 || \1 > 3
         WARN "vol macro must have an operand of 0-3."
     ENDC
@@ -190,7 +194,7 @@ vol: MACRO
     IF \1 == 0
         db 0
     ELSE
-        db (4 - \1)
+        db (4 - \1) << 5
     ENDC
     ENDM
 
@@ -212,7 +216,7 @@ mastervol: MACRO
 
 pan: MACRO
     ; TODO: Can merge into one byte (2-bit)
-    db OutputByte, \1 ; Do some conversion
+    db PanByte, \1
     ENDM
 
 sweep: MACRO
@@ -228,19 +232,19 @@ waveform: MACRO
     db WaveformByte
 
     IF \1==12.5
-        db $00
+        db %00000000
     ELSE
 
         IF \1==25
-            db $01
+            db %01000000
         ELSE
 
             IF \1==50
-                db $02
+                db %10000000
             ELSE
 
                 IF \1==75
-                    db $03
+                    db %11000000
                 ELSE
 
                     WARN "waveform must have an operand of 12.5, 25, 50, or 75."
@@ -256,13 +260,12 @@ wavedata: MACRO
     ENDM
 
 inlinewavedata: MACRO
+; This is to be discouraged; if possible, don't include it at all!
     db InlineWaveDataByte
-ShiftAmount SET 15 * 8
+Position SET 1
 REPT 16
-    db ((\1 >> ShiftAmount) & $FF)
-    db $64, $64, $64, $64, $64, $64
-    db ShiftAmount
-ShiftAmount SET ShiftAmount + -8 ; I know it looks silly, but this was the only way I got it to work
+    db \1
+    SHIFT
 ENDR
     ENDM
 
