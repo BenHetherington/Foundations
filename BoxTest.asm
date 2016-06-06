@@ -113,13 +113,7 @@ GameStartup:
     call ShowTextBox
     ld hl, AssemblyString
     call PrintString
-
-    ld c, 30
-    call WaitFrames
-    call CloseTextBox
-    ; End test-y
-
-    call ShowTextBox
+    
     ld hl, DemoStringOne
     call PrintString
     call CloseTextBox
