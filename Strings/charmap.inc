@@ -17,6 +17,7 @@ charmap "_#3_",  $8E ; Change palette to #3
 
 ; Print variables
 charmap "_PLAYER_", $8F ; Print player name
+; TODO: Add UInt8 printing from a memory address
 
 ; Uppercase
 charmap "A", $01

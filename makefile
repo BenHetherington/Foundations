@@ -15,6 +15,7 @@ INCLUDE_FILES = $(wildcard *.inc) $(wildcard */*/.inc) $(wildcard */*/*/.inc)
 
 # Linking - produces the final .gbc file (and corrects its checksums)
 $(ROM_FILENAME) : $(OBJECT_FILES)
+	rgbasm -o $(BUILD_DIR)AssemblyString.o AssemblyString.asm
 	rgblink -o "$@" $(LINK_FLAGS) $^
 	rgbfix -v $@
 

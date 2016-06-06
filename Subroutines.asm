@@ -352,3 +352,23 @@ MemCopyFixedDestRoutine::
     jr nz, .Loop
     ret
 
+
+SECTION "BCD Conversion", ROM0
+
+BinaryToBCD::
+; From https://www.msx.org/forum/development/msx-development/bcdhex-conversion-asm
+; Converts a binary number from 0-99 to a BCD number from $00-$99
+; TODO: Make conversion subroutines for 0-255 to $000-$255 and 16-bit ones if possible
+    push bc
+    ld c, a
+    ld b, 8
+    xor a
+.loop:
+    sla	c
+    adc	a, a
+    daa
+    dec b
+    jr nz, .loop
+    pop	bc
+    ret
+

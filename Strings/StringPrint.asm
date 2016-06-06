@@ -20,6 +20,7 @@ TextColour:: db               ; The current text colour.
 PrintSettings:: db            ; 0000 0bss: - ss = 00 for normal, 01 for faster, 11 for fastest.
                               ;            - b = 0 for beeps, 1 for no beeps (SFX)
                               ; Remaining bits are yet to be decided (but are currently unused)
+StringBuffer:: ds $10         ; A buffer to contain strings generated from integers, etc.
 
 SECTION "Blank Tile Data", ROMX[$7000]
 BlankTiles::

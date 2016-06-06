@@ -111,7 +111,16 @@ GameStartup:
     res 4, [hl]
 
     call ShowTextBox
-    ld hl, DemoStringZero
+    ld hl, AssemblyString
+    call PrintString
+
+    ld c, 30
+    call WaitFrames
+    call CloseTextBox
+    ; End test-y
+
+    call ShowTextBox
+    ld hl, DemoStringOne
     call PrintString
     call CloseTextBox
 
@@ -246,11 +255,6 @@ WipeSaveData:
 
     call DisableSRAM
     ret
-
-DemoStringZero:
-    db "Last assembled:\n"
-    db "{__DATE__}", "\n"
-    db "{__TIME__}", "~"
 
 DemoStringOne:
     db "Huh?\n_@_", 1, GreenColour, "`````"

@@ -4,6 +4,8 @@ INCLUDE "lib/Shift.inc"
 
 IMPORT TextTilesPointer, CopyChar
 
+; SECTION "Text Box Map",
+
 SECTION "Text Boxes", ROM0
 
 ShowTextBox::
