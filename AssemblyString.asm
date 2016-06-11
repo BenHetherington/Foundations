@@ -1,6 +1,6 @@
 INCLUDE "Strings/charmap.inc"
 
-SECTION "Assembly Date and Time String", ROM0
+SECTION "Assembly Date and Time String", ROMX
 
 AssemblyString::
     db "Last assembled:\n"

@@ -334,6 +334,9 @@ UpdateChannel
     ld [NR30], a
     call SmallMemCopyRoutine
 
+    ld a, $80
+    ld [NR30], a
+
     pop bc
     pop hl
     jp .CheckNoteCommand ; TODO: Make jr?

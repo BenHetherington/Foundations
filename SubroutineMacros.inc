@@ -4,6 +4,7 @@ JOYP  EQU $FF00 ; Joypad
 SB    EQU $FF01 ; Serial buffer
 SC    EQU $FF02 ; Serial control
 DIVI  EQU $FF04 ; Divider
+TIMA  EQU $FF05 ; Timer counter
 TMA   EQU $FF06 ; Timer modulo
 TAC   EQU $FF07 ; Timer control
 NR10  EQU $FF10 ; PU1 Sweep
@@ -13,7 +14,9 @@ NR13  EQU $FF13 ; PU1 Freq low
 NR14  EQU $FF14 ; PU1 Freq high +
 NR23  EQU $FF18 ; PU2 Freq low
 NR30  EQU $FF1A ; WAV Sound on/off
+NR32  EQU $FF1C ; WAV Volume
 NR33  EQU $FF1D ; WAV Freq low
+NR34  EQU $FF1E ; WAV Freq high +
 NR50  EQU $FF24 ; Sound Master Volume
 NR51  EQU $FF25 ; Sound Panning
 LCDC  EQU $FF40 ; LCD Control

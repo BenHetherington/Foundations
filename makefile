@@ -9,7 +9,7 @@ SYM_FILENAME = $(BUILD_DIR)$(PRODUCT_NAME).sym
 
 LINK_FLAGS = -m "$(MAP_FILENAME)" -n "$(SYM_FILENAME)"
 
-SOURCE_FILES = $(wildcard *.asm) $(wildcard */*.asm) $(wildcard */*/*.asm)
+SOURCE_FILES = $(wildcard *.asm) $(wildcard */*.asm) $(wildcard */*/*.asm) $(wildcard */*/*/*.asm)
 OBJECT_FILES = $(patsubst %.asm, $(BUILD_DIR)%.o, $(SOURCE_FILES))
 INCLUDE_FILES = $(wildcard *.inc) $(wildcard */*/.inc) $(wildcard */*/*/.inc)
 

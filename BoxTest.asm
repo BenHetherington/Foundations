@@ -63,13 +63,13 @@ GameStartup:
     call DisableDoubleSpeed
 
 ; Set up timer
-    ld [TMA], a ; Reset the timer modulo value
+    ;ld [TMA], a ; Reset the timer modulo value
 
-    ld a, %100  ; 4096 Hz timer, interrupts at 16 Hz. Could be subject to change!
-    ld [TAC], a
+    ;ld a, %100  ; 4096 Hz timer, interrupts at 16 Hz. Could be subject to change!
+    ;ld [TAC], a
 
 ; Enable the correct interrupts
-    ld a, %00000111 ; Timer, LYC (LCD STAT), V-Blank
+    ld a, %00000001 ; [No Timer], [No LYC (LCD STAT)], V-Blank
     ld [IE], a      ; TODO: Add serial to this to add link capablilities?
 
     call InitSoundEngine
@@ -102,6 +102,11 @@ GameStartup:
     jp nz, .SRAMBroken
 
 .MainBit
+    call PlayLucSample
+
+    ld c, 60
+    call WaitFrames
+
     ld a, 1
     call PlayMusic
 
