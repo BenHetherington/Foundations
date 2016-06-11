@@ -1,11 +1,11 @@
 INCLUDE "SubroutineMacros.inc"
 
 SECTION "Sample Vars", WRAM0
-SampleTempLR:
 StopSampling: db ; Also used as a temporary variable for the current panning
 SampleBank: db
 SamplePointer: dw
 SamplesLeft: dw
+SampleTempLR: db
 
 SECTION "Sample Player", ROM0
 
@@ -145,8 +145,6 @@ SampleUpdate::
 
     ld a, [SampleTempLR]
     ld [NR51], a
-    xor a
-    ld [SampleTempLR], a
 
     ld a, l
     ld [SamplePointer], a
