@@ -438,9 +438,11 @@ PutChar:
 
 .FirstByte
     call EnsureVBlank
+    di
     ld a, [hl]
     or a, b
     ld [hl], a
+    ei
 
 .CheckSecondByte
     inc hl
@@ -449,9 +451,11 @@ PutChar:
 
 .SecondByte
     call EnsureVBlank
+    di
     ld a, [hl]
     or a, c
     ld [hl], a
+    ei
 
 .FinishCopy
     inc hl

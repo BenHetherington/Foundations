@@ -5,6 +5,7 @@ StopSampling: db ; Also used as a temporary variable for the current panning
 SampleBank: db
 SamplePointer: dw
 SamplesLeft: dw
+SampleFreqHi: db
 SampleTempLR: db
 
 SECTION "Sample Player", ROM0
@@ -31,21 +32,56 @@ PlayLucSample::
     ld a, [hl+]
     ld [SamplesLeft], a
 
-    ld a, [hl]
+    ld a, [hl+]
     ld [SamplesLeft + 1], a
 
 ;Set up timer
-    ld a, %100  ; 4096 Hz timer. TODO: Needs to be adjustable.
+    ld a, %100 ; 4096 Hz timer
     ld [TAC], a
 
-    ld a, 256 - 32
+    ld a, [hl]
+    ld b, a
+    cpl
+    inc a
     ld [TMA], a ; Reset the timer modulo value
+    ; TODO: Take double speed mode into account!
 
     ld hl, IE
     set 2, [hl] ; Enable the timer interrupt
 
     ld a, 255
     ld [TIMA], a
+
+; Stop sound playback
+; TODO: Should we incorporate the antispike technique here too?
+    xor a
+    ld [NR30], a
+
+; Set playback frequency
+; Effectively does 2048 - (b << 4) and put it in NR33/34
+    ld b, b
+    swap b
+    ld a, b
+    and a, $F0
+
+    cpl
+    inc a
+    ld [NR33], a
+
+    ld a, b
+    jr nz, .SkipOverflow
+
+.Overflow
+    dec a
+
+.SkipOverflow
+    cpl
+    and a, $07
+    ld [NR34], a
+
+    set 7, a
+    ld [SampleFreqHi], a
+
 
     ; TODO: Try and remove this hack; don't change balance if we don't have to!
     ld hl, NR51
@@ -83,12 +119,14 @@ SampleUpdate::
     ld b, $10 ; Max no. of bytes to copy
     ld c, $30 ; Wave data location
 
+; "Antispike" technique
     ld a, [NR51]
     ld [SampleTempLR], a
     and a, %10111011
     ld [NR51], a
 
-    xor a ; Stop WAV playback
+; Stop WAV playback
+    xor a
     ld [NR30], a
 
 .CopyLoop
@@ -100,7 +138,7 @@ SampleUpdate::
     jr z, .Dec1Carry
 
     dec e
-    jr nz, .CheckForFinish ; TODO: Check that this is right
+    jr nz, .CheckForFinish
     jr .Dec2Carry
 
 .Dec1Carry
@@ -138,9 +176,7 @@ SampleUpdate::
     ld a, $80 ; Start WAV playback
     ld [NR30], a
 
-    xor a
-    ld [NR33], a
-    ld a, $06 | (%10000000)
+    ld a, [SampleFreqHi]
     ld [NR34], a
 
     ld a, [SampleTempLR]

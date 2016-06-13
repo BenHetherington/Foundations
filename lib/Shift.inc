@@ -49,14 +49,24 @@ sla16:  MACRO
 __rp    EQUS    STRLWR("\1")
 __r1    EQUS    STRSUB("\1",1,1)
 __r2    EQUS    STRSUB("\1",2,1)
-        IF      (STRCMP("{__rp}","bc")==0) || (STRCMP("{__rp}","de")==0) || (STRCMP("{__rp}","hl")==0)
+
+        IF      (STRCMP("{__rp}","bc")==0) || (STRCMP("{__rp}","de")==0)
          REPT    \2
          sla     __r2
          rl      __r1
          ENDR
+
         ELSE
-         FAIL   "Register must be BC, DE or HL"
+            IF (STRCMP("{__rp}","hl")==0)
+                REPT \2
+                add hl, hl
+                ENDR
+
+            ELSE
+                FAIL   "Register must be BC, DE or HL"
+            ENDC
         ENDC
+
         PURGE   __rp,__r1,__r2
         ENDM
 

@@ -60,7 +60,7 @@ SECTION "GBC Subroutines", ROM0
 
 KEY1 EQU $FF4D
 
-SwitchSpeed::
+SwitchSpeed:
     ld a, 1
     ld [KEY1], a
     stop
@@ -72,6 +72,9 @@ EnableDoubleSpeed::
     bit 7, a
     ret nz
 .Switch
+    ld a, [TMA]
+    sla a
+    ld [TMA], a
     jr SwitchSpeed
 
 DisableDoubleSpeed::
@@ -80,6 +83,9 @@ DisableDoubleSpeed::
     bit 7, a
     ret z
 .Switch
+    ld a, [TMA]
+    srl a
+    ld [TMA], a
     jr SwitchSpeed
 
 WaitForVRAMDMAToFinish::
