@@ -133,8 +133,11 @@ UpdateChannel
     jp nc, .ProcessCommand ; TODO: Make jr?
 
 .NoteCommand
-    ; TODO: Deal with $00
     ; TODO: Transpose the note as necessary
+
+    and a ; TODO: Make this a command?
+    jp z, .KillNote
+
     push hl
     ld hl, FrequencyTable - 2
 
@@ -153,12 +156,43 @@ UpdateChannel
     ld a, [hl+]
     ld d, [hl]
 
-.WriteToDestination
+.WriteLo
     ld [$FF00+c], a
     inc c
     ld a, d
-    set 6, a ; TODO: Set finite length only if necessary
-    set 7, a ; Restart sound; TODO: Set only if necessary
+    ; set 6, a ; TODO: Set finite length only if necessary
+    jr c, .WriteHi ; TODO: Only skip if necessary
+
+.TriggerNote
+    set 7, a ; Restart sound
+    ld d, a
+    ld a, b ; Backup frequency and place current channel in a
+
+    srl a
+    cp 2 ; Check if we're in WAV
+    jr z, .TriggerWavNote
+
+.TriggerEnvelopedNote
+    ld e, c
+    ld c, b
+
+    CalculateBackupAddress PU1MuEnvelopeBackup
+    CalculateChannelAddress NR12
+
+    ld a, [hl]
+    ld [$FF00+c], a
+
+    ld c, e
+    ld a, d
+    jr .WriteHi
+
+.TriggerWavNote
+    ld a, $80
+    ld [NR30], a
+
+    ld a, d
+
+.WriteHi
     ld [$FF00+c], a
 
 .CleanUp
@@ -180,6 +214,29 @@ UpdateChannel
     pop hl
 
     jp .FinishCommandLoop
+
+
+.KillNote
+; TODO: Make this a command
+; Stops the current note from playing
+    ld a, c
+    srl a
+    cp 2
+    jr z, .KillWavNote
+
+    ld d, c
+    CalculateChannelAddress NR12
+
+    xor a
+    ld [$FF00+c], a
+
+    ld c, d
+    jr .GetLength
+
+.KillWavNote
+    xor a
+    ld [NR30], a
+    jr .GetLength
 
 .ProcessCommand
 ; Deals with the non-note commands
@@ -217,7 +274,14 @@ UpdateChannel
     ld [$FF00+c], a
 
     ld c, d ; Restoring c
-    jr .CheckNoteCommand
+    push hl
+
+    ld d, a
+    CalculateBackupAddress PU1MuEnvelopeBackup
+    ld [hl], d
+
+    pop hl
+    jp .CheckNoteCommand
 
 
 
@@ -230,13 +294,13 @@ UpdateChannel
     ld a, [hl+]
     ld [MuTempo], a
     ld [MuCounter], a
-    jr .GetNextCommandLoop
+    jp .GetNextCommandLoop
 
 .FXTempo
     ld a, [hl+]
     ld [FXTempo], a
     ld [FXCounter], a
-    jr .GetNextCommandLoop
+    jp .GetNextCommandLoop
 
 
 .Jump

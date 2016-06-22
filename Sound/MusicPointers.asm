@@ -39,4 +39,13 @@ MusicPointers::
     dw TempSongPU2      ; PU2
     dw TempSongWAV      ; WAV
     dw NO_DATA          ; NOI
+
+.Idea0906
+    ; ID = 03
+    ; Perhaps use this for the file load screen?
+    db BANK(Idea0906PU1)
+    dw Idea0906PU1
+    dw Idea0906PU2
+    dw Idea0906WAV
+    dw NO_DATA
     

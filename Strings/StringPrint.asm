@@ -22,7 +22,7 @@ PrintSettings:: db            ; 0000 0bss: - ss = 00 for normal, 01 for faster, 
                               ; Remaining bits are yet to be decided (but are currently unused)
 StringBuffer:: ds $10         ; A buffer to contain strings generated from integers, etc.
 
-SECTION "Blank Tile Data", ROMX[$7000]
+SECTION "Blank Tile Data", ROMX[$8000 - $5B0]
 BlankTiles::
 REPT $5B0
     db $00

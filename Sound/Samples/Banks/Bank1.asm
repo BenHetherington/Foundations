@@ -4,3 +4,6 @@ SECTION "Sample Bank #1", ROMX
 
 Luc::
     INCBIN "Sound/Samples/Data/Luc.bin"
+
+Chord::
+    INCBIN "Sound/Samples/Data/Chord.bin"

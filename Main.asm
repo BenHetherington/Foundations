@@ -107,8 +107,8 @@ GameStartup:
     ld c, 60
     call WaitFrames
 
-    ld a, 1
-    call PlayMusic
+    ; ld a, 3
+    ; call PlayMusic
 
     CallToOtherBank ShowBen10doScreen
 

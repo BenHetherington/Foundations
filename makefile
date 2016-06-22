@@ -7,7 +7,7 @@ ROM_FILENAME = $(BUILD_DIR)$(PRODUCT_NAME).gbc
 MAP_FILENAME = $(BUILD_DIR)$(PRODUCT_NAME).map
 SYM_FILENAME = $(BUILD_DIR)$(PRODUCT_NAME).sym
 
-LINK_FLAGS = -m "$(MAP_FILENAME)" -n "$(SYM_FILENAME)"
+LINK_FLAGS = -m "$(MAP_FILENAME)" -n "$(SYM_FILENAME)" -p 255
 
 SOURCE_FILES = $(wildcard *.asm) $(wildcard */*.asm) $(wildcard */*/*.asm) $(wildcard */*/*/*.asm)
 OBJECT_FILES = $(patsubst %.asm, $(BUILD_DIR)%.o, $(SOURCE_FILES))

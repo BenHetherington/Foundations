@@ -13,7 +13,7 @@
 		B529FF7B1CDAB07A0044D8BB /* TempSong.asm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.asm.asm; path = TempSong.asm; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.asm.ppc; };
 		B54332071CF4FF0400A8642C /* StringPrint.asm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.asm.asm; name = StringPrint.asm; path = Strings/StringPrint.asm; sourceTree = SOURCE_ROOT; xcLanguageSpecificationIdentifier = xcode.lang.asm.ppc; };
 		B54332081CF4FF6900A8642C /* TextBox.asm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.asm.asm; path = TextBox.asm; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.asm.ppc; };
-		B599ADC51C4182CE005C2B67 /* BoxTest.asm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.asm.asm; path = BoxTest.asm; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.asm.ppc; };
+		B599ADC51C4182CE005C2B67 /* Main.asm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.asm.asm; path = Main.asm; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.asm.ppc; };
 		B599ADC61C4182CE005C2B67 /* charmap.inc */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.pascal; path = charmap.inc; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.asm.ppc; };
 		B599ADC71C4182CE005C2B67 /* Header.asm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.asm.asm; path = Header.asm; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.asm.ppc; };
 		B599ADC81C4182CE005C2B67 /* IncompatibleGB.asm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.asm.asm; path = IncompatibleGB.asm; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.asm.ppc; };
@@ -32,10 +32,12 @@
 		B5AB38C81CF247DA00B8B02C /* Ben10doLogoTiles */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = Ben10doLogoTiles; sourceTree = "<group>"; };
 		B5AF65891CDD39F60076ADC2 /* AzeleaTownTest.asm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.asm.asm; path = AzeleaTownTest.asm; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.asm.ppc; };
 		B5B03C471D00EEBC00DDD350 /* AssemblyString.asm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.asm.asm; path = AssemblyString.asm; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.asm.ppc; };
+		B5B74CC71D1AD44D00188B7B /* Chord.bin */ = {isa = PBXFileReference; lastKnownFileType = archive.macbinary; path = Chord.bin; sourceTree = "<group>"; };
+		B5B74CC81D1AE8AC00188B7B /* Idea0906.asm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.asm.asm; path = Idea0906.asm; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.asm.ppc; };
 		B5BE2CD31C6E3FC800A0F391 /* MusicPointers.asm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.asm.asm; path = MusicPointers.asm; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.asm.ppc; };
 		B5BE2CD41C6E4C6C00A0F391 /* Subroutines.asm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.asm.asm; path = Subroutines.asm; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.asm.ppc; };
 		B5D067F01D0717BD00D443A3 /* SamplePointers.asm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.asm.asm; path = SamplePointers.asm; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.asm.ppc; };
-		B5D067F21D071E1800D443A3 /* Luc.bin */ = {isa = PBXFileReference; lastKnownFileType = archive.macbinary; path = Luc.bin; sourceTree = "<group>"; };
+		B5D067F21D071E1800D443A3 /* Luc.bin */ = {isa = PBXFileReference; explicitFileType = compiled; path = Luc.bin; sourceTree = "<group>"; };
 		B5D067F41D071E9600D443A3 /* Bank1.asm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.asm.asm; path = Bank1.asm; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.asm.ppc; };
 		B5D067F51D07676800D443A3 /* SamplePlayer.asm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.asm.asm; path = SamplePlayer.asm; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.asm.ppc; };
 /* End PBXFileReference section */
@@ -58,6 +60,7 @@
 			children = (
 				B529FF7B1CDAB07A0044D8BB /* TempSong.asm */,
 				B5AF65891CDD39F60076ADC2 /* AzeleaTownTest.asm */,
+				B5B74CC81D1AE8AC00188B7B /* Idea0906.asm */,
 			);
 			path = Music;
 			sourceTree = "<group>";
@@ -66,7 +69,7 @@
 			isa = PBXGroup;
 			children = (
 				B5AB38C11CF211F700B8B02C /* makefile */,
-				B599ADC51C4182CE005C2B67 /* BoxTest.asm */,
+				B599ADC51C4182CE005C2B67 /* Main.asm */,
 				B5B03C471D00EEBC00DDD350 /* AssemblyString.asm */,
 				B5AB38C21CF21B7B00B8B02C /* Ben10doScreen.asm */,
 				B5AB38C51CF228EF00B8B02C /* SubroutineMacros.inc */,
@@ -130,6 +133,7 @@
 			isa = PBXGroup;
 			children = (
 				B5D067F21D071E1800D443A3 /* Luc.bin */,
+				B5B74CC71D1AD44D00188B7B /* Chord.bin */,
 			);
 			path = Data;
 			sourceTree = "<group>";

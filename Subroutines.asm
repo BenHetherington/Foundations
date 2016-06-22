@@ -73,7 +73,13 @@ EnableDoubleSpeed::
     ret nz
 .Switch
     ld a, [TMA]
+    cpl
+    inc a
+
     sla a
+    cpl
+    inc a
+
     ld [TMA], a
     jr SwitchSpeed
 
@@ -84,7 +90,13 @@ DisableDoubleSpeed::
     ret z
 .Switch
     ld a, [TMA]
+    cpl
+    inc a
+
     srl a
+    cpl
+    inc a
+
     ld [TMA], a
     jr SwitchSpeed
 

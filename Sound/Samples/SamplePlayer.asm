@@ -7,6 +7,8 @@ SamplePointer: dw
 SamplesLeft: dw
 SampleFreqHi: db
 SampleTempLR: db
+SampleStartingPointer: dw
+SamplesTotal: dw
 
 SECTION "Sample Player", ROM0
 
@@ -18,22 +20,26 @@ PlayLucSample::
     ld [TIMA], a
     ld [StopSampling], a
 
-    ld hl, SamplePointers ; Sample with ID 0
+    ld hl, SamplePointers + (1 * 6) ; Sample with ID 1
 
     ld a, [hl+]
     ld [SampleBank], a
 
     ld a, [hl+]
     ld [SamplePointer], a
+    ld [SampleStartingPointer], a
 
     ld a, [hl+]
     ld [SamplePointer + 1], a
+    ld [SampleStartingPointer + 1], a
 
     ld a, [hl+]
     ld [SamplesLeft], a
+    ld [SamplesTotal], a
 
     ld a, [hl+]
     ld [SamplesLeft + 1], a
+    ld [SamplesTotal + 1], a
 
 ;Set up timer
     ld a, %100 ; 4096 Hz timer
@@ -59,7 +65,6 @@ PlayLucSample::
 
 ; Set playback frequency
 ; Effectively does 2048 - (b << 4) and put it in NR33/34
-    ld b, b
     swap b
     ld a, b
     and a, $F0
@@ -101,7 +106,7 @@ SampleUpdate::
 
     ld a, [StopSampling]
     or a
-    jr nz, .StopPlayingSample
+    jp nz, .StopPlayingSample
 
     ld a, [SampleBank]
     SwitchROMBankFromRegister
@@ -154,9 +159,23 @@ SampleUpdate::
     jr .Finish
 
 .HandleSampleFinished
-    ; TODO: Account for looping samples!
-    ld a, 1
-    ld [StopSampling], a
+    ; TODO: Make this dynamic! Decide if the sample should loop, and if so, how long it should be before next interrupt!
+    ld b, b
+    ld a, 256 - (2 * 2)
+    ld [TIMA], a
+
+    ld a, [SampleStartingPointer]
+    ld l, a
+    ld a, [SampleStartingPointer + 1]
+    ld h, a
+
+    ld a, [SamplesTotal]
+    ld e, a
+    ld a, [SamplesTotal + 1]
+    ld d, a
+
+    ;ld a, 1
+    ;ld [StopSampling], a
 
     dec b
     jr z, .Finish

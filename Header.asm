@@ -1,44 +1,47 @@
 INCLUDE "SubroutineMacros.inc"
 
-SECTION	"Org $00",ROM0[$00]
+SECTION	"rst $00",ROM0[$00]
 RST_00:
     ld b, b
-	jp	$100
+	rst $38
 
-SECTION	"Org $08",ROM0[$08]
+SECTION	"rst $08",ROM0[$08]
 RST_08:
     ld b, b
-	jp	$100
+	rst $38
 
-SECTION	"Org $10", ROM0[$10]
+SECTION	"rst $10", ROM0[$10]
 RST_10:
     ld b, b
-	jp	$100
+	rst $38
 
-SECTION	"Org $18", ROM0[$18]
+SECTION	"rst $18", ROM0[$18]
 RST_18:
     ld b, b
-	jp	$100
+	rst $38
 
-SECTION	"Org $20", ROM0[$20]
+SECTION	"rst $20", ROM0[$20]
 RST_20:
     ld b, b
-	jp	$100
+	rst $38
 
-SECTION	"Org $28", ROM0[$28]
+SECTION	"rst $28", ROM0[$28]
 RST_28:
     ld b, b
-	jp	$100
+	rst $38
 
-SECTION	"Org $30", ROM0[$30]
+SECTION	"rst $30", ROM0[$30]
 RST_30:
     ld b, b
-	jp	$100
+	rst $38
 
-SECTION	"Org $38", ROM0[$38]
-RST_38:
+SECTION	"rst $38", ROM0[$38]
+InvalidInstruction:
     ld b, b
-	jp	$100
+	di
+.Loop
+    stop
+    jr .Loop
 
 SECTION	"V-Blank IRQ Vector", ROM0[$40]
 VBlankInterrupt:
