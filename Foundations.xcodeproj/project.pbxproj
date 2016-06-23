@@ -38,7 +38,7 @@
 		B5BE2CD41C6E4C6C00A0F391 /* Subroutines.asm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.asm.asm; path = Subroutines.asm; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.asm.ppc; };
 		B5D067F01D0717BD00D443A3 /* SamplePointers.asm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.asm.asm; path = SamplePointers.asm; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.asm.ppc; };
 		B5D067F21D071E1800D443A3 /* Luc.bin */ = {isa = PBXFileReference; explicitFileType = compiled; path = Luc.bin; sourceTree = "<group>"; };
-		B5D067F41D071E9600D443A3 /* Bank1.asm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.asm.asm; path = Bank1.asm; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.asm.ppc; };
+		B5D067F41D071E9600D443A3 /* SampleData.asm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.asm.asm; name = SampleData.asm; path = Banks/SampleData.asm; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.asm.ppc; };
 		B5D067F51D07676800D443A3 /* SamplePlayer.asm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.asm.asm; path = SamplePlayer.asm; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.asm.ppc; };
 /* End PBXFileReference section */
 
@@ -121,8 +121,8 @@
 		B5D067EF1D07175D00D443A3 /* Samples */ = {
 			isa = PBXGroup;
 			children = (
-				B5D067F31D071E3600D443A3 /* Banks */,
 				B5D067F11D071DA600D443A3 /* Data */,
+				B5D067F41D071E9600D443A3 /* SampleData.asm */,
 				B5D067F01D0717BD00D443A3 /* SamplePointers.asm */,
 				B5D067F51D07676800D443A3 /* SamplePlayer.asm */,
 			);
@@ -136,14 +136,6 @@
 				B5B74CC71D1AD44D00188B7B /* Chord.bin */,
 			);
 			path = Data;
-			sourceTree = "<group>";
-		};
-		B5D067F31D071E3600D443A3 /* Banks */ = {
-			isa = PBXGroup;
-			children = (
-				B5D067F41D071E9600D443A3 /* Bank1.asm */,
-			);
-			path = Banks;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */

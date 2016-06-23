@@ -1,6 +1,7 @@
 SECTION "SoundVariables", WRAM0
 ; Must define some important sound-y variables
 
+StartSoundVars:
 MuTempo: db
 MuCounter: db
 FXTempo: db
@@ -52,9 +53,13 @@ NOIFXLoopCounter: db
 
 ; Backup for if the envelope is changed by FX channel
 PU1MuEnvelopeBackup: db
+PU1FXEnvelopeBackup: db
 PU2MuEnvelopeBackup: db
+PU2FXEnvelopeBackup: db
 WAVMuEnvelopeBackup: db
+WAVFXEnvelopeBackup: db
 NOIMuEnvelopeBackup: db
+NOIFXEnvelopeBackup: db
 
 ; Backup for if the sweep is changed by FX channel
 PU1MuSweepBackup: db
@@ -110,4 +115,6 @@ PU2SlideOrVibratoAmount: db
 WAVSlideOrVibratoAmount: db
 NOISlideOrVibratoAmount: db
 
-SoundVariableBytes EQU 86
+EndSoundVars:
+
+SoundVariableBytes EQU (EndSoundVars - StartSoundVars)
