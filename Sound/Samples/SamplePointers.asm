@@ -1,7 +1,7 @@
 SECTION "Sample Pointers", ROMX
 
 ; Contains pointers to the samples.
-; Each sample's entry is eight bytes long, and arranged as follows:
+; Each sample's entry is six bytes long, and arranged as follows:
 ;  db SampleBank
 ;  dw SampleData
 ;  dw SampleLength (in samples) + $101 (due to programming quirk)

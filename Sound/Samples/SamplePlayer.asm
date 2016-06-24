@@ -1,7 +1,8 @@
 INCLUDE "SubroutineMacros.inc"
+INCLUDE "lib/Shift.inc"
 
 SECTION "Sample Vars", WRAM0
-StopSampling: db ; Also used as a temporary variable for the current panning
+StopSampling: db
 SampleBank: db
 SamplePointer: dw
 SamplesLeft: dw
@@ -9,18 +10,30 @@ SampleFreqHi: db
 SampleTempLR: db
 SampleStartingPointer: dw
 SamplesTotal: dw
+SampleShouldLoop: db
 
 SECTION "Sample Player", ROM0
 
 ; This is a temporary sample player, for use for development.
 ; TODO: Refactor this back into the sound engine!
 
-PlayLucSample::
+PlaySample::
+    push hl
+    push bc
+
+    ld c, a
+    ld b, 0
+    sla16 bc, 1 ; hl = SamplePointers + (a * 6)
+
+    ld hl, SamplePointers
+    add hl, bc
+
+    sla16 bc, 1
+    add hl, bc
+
     xor a
     ld [TIMA], a
     ld [StopSampling], a
-
-    ld hl, SamplePointers + (1 * 6) ; Sample with ID 1
 
     ld a, [hl+]
     ld [SampleBank], a
@@ -40,6 +53,9 @@ PlayLucSample::
     ld a, [hl+]
     ld [SamplesLeft + 1], a
     ld [SamplesTotal + 1], a
+
+    ld a, d
+    ld [SampleShouldLoop], a
 
 ;Set up timer
     ld a, %100 ; 4096 Hz timer
@@ -94,6 +110,8 @@ PlayLucSample::
     or a, [hl]
     ld [hl], a
 
+    pop bc
+    pop hl
     ret
 
 
@@ -159,7 +177,12 @@ SampleUpdate::
     jr .Finish
 
 .HandleSampleFinished
-    ; TODO: Make this dynamic! Decide if the sample should loop, and if so, how long it should be before next interrupt!
+    ld a, [SampleShouldLoop]
+    or a
+    jr z, .FinishSample
+
+.LoopSample
+    ; TODO: Make this dynamic! Decide how long it should be before next interrupt!
     ld b, b
     ld a, 256 - (2 * 2)
     ld [TIMA], a
@@ -173,10 +196,14 @@ SampleUpdate::
     ld e, a
     ld a, [SamplesTotal + 1]
     ld d, a
+    jr .ConsiderPadding
 
-    ;ld a, 1
-    ;ld [StopSampling], a
+.FinishSample
+    ld a, 1
+    ld [StopSampling], a
+    ; fallthrough
 
+.ConsiderPadding
     dec b
     jr z, .Finish
 

@@ -102,7 +102,10 @@ GameStartup:
     jp nz, .SRAMBroken
 
 .MainBit
-    call PlayLucSample
+    ld b, b
+    ld a, 1
+    ld d, a
+    call PlaySample
 
     ld c, 60
     call WaitFrames
