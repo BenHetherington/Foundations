@@ -8,9 +8,9 @@ ds $1000
 OAMData       EQU $D000 ; TODO: See if we can make these not constant
 Tiles         EQU $D0A0
 Map           EQU $D340
-MapAttributes EQU $D3F0 ; TODO: May need to change!
-BGPalettes    EQU $D460 ; TODO: May need to change!
-SprPalettes   EQU $D4A0 ; TODO: May need to change!
+MapAttributes EQU $D3F0
+BGPalettes    EQU $D460
+SprPalettes   EQU $D4A0
 
 SECTION "Ben10do Screen", ROMX
 
@@ -268,6 +268,7 @@ KeepMoving:
 
 
 MoveBGAndTiles:
+; TODO: Generalise this!
 ; x offset in b
 ; y offset in c
     push hl

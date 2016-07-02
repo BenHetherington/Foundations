@@ -16,6 +16,9 @@ PlayingOnGBA:: db
 TempAnimFrame:: db
 TempAnimWait:: db
 
+SECTION "OAM Data", WRAM0[$C000]
+OAMData:: ds 160
+
 StackSize EQU $80
 
 SECTION "Stack Space", WRAM0[$D000 - StackSize]
@@ -102,21 +105,26 @@ GameStartup:
     jp nz, .SRAMBroken
 
 .MainBit
-    ld b, b
-    ld a, 1
-    ld d, a
-    call PlaySample
+    ; ld b, b
+    ; ld a, 1
+    ; ld d, a
+    ; call PlaySample
 
-    ld c, 60
-    call WaitFrames
+    ; ld c, 60
+    ; call WaitFrames
 
-    ; ld a, 3
-    ; call PlayMusic
+    ld a, 3
+    call PlayMusic
 
     CallToOtherBank ShowBen10doScreen
 
     ld hl, LCDC
     res 4, [hl]
+
+    MemClear OAMData, 160
+
+    call PrepareOverworld
+    jp OverworldGameLoop
 
     call ShowTextBox
     ld hl, AssemblyString

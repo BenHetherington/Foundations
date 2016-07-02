@@ -13,6 +13,7 @@
 		B529FF7B1CDAB07A0044D8BB /* TempSong.asm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.asm.asm; path = TempSong.asm; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.asm.ppc; };
 		B54332071CF4FF0400A8642C /* StringPrint.asm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.asm.asm; name = StringPrint.asm; path = Strings/StringPrint.asm; sourceTree = SOURCE_ROOT; xcLanguageSpecificationIdentifier = xcode.lang.asm.ppc; };
 		B54332081CF4FF6900A8642C /* TextBox.asm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.asm.asm; path = TextBox.asm; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.asm.ppc; };
+		B585234A1D1ECDA3009C9DC4 /* OverworldGameLoop.asm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.asm.asm; path = OverworldGameLoop.asm; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.asm.ppc; };
 		B599ADC51C4182CE005C2B67 /* Main.asm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.asm.asm; path = Main.asm; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.asm.ppc; };
 		B599ADC61C4182CE005C2B67 /* charmap.inc */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.pascal; path = charmap.inc; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.asm.ppc; };
 		B599ADC71C4182CE005C2B67 /* Header.asm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.asm.asm; path = Header.asm; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.asm.ppc; };
@@ -70,6 +71,7 @@
 			children = (
 				B5AB38C11CF211F700B8B02C /* makefile */,
 				B599ADC51C4182CE005C2B67 /* Main.asm */,
+				B585234A1D1ECDA3009C9DC4 /* OverworldGameLoop.asm */,
 				B5B03C471D00EEBC00DDD350 /* AssemblyString.asm */,
 				B5AB38C21CF21B7B00B8B02C /* Ben10doScreen.asm */,
 				B5AB38C51CF228EF00B8B02C /* SubroutineMacros.inc */,

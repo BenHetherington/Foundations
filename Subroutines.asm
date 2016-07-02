@@ -370,6 +370,14 @@ MemCopyFixedDestRoutine::
     jr nz, .Loop
     ret
 
+MemClearRoutine::
+    xor a
+.Loop
+    ld [hl+], a
+    dec b
+    jr nz, .Loop
+    ret
+
 
 SECTION "BCD Conversion", ROM0
 

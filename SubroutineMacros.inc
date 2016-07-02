@@ -115,7 +115,6 @@ PopWRAMBank: MACRO
 ; DMA
 
 StartVRAMDMA: MACRO
-; Assuming the DMA Wait Routine is in HRAM already
 ; \1: Source, \2: Destination, \3: Length, \4: 0 = General, 1 = H-Blank
     ;IF \1 & $F != 0
     ;WARN "DMA Souce address's lower four bits must be 0."
@@ -125,10 +124,25 @@ StartVRAMDMA: MACRO
     ;WARN "DMA Destination address's lower four bits must be 0."
     ;ENDC
 
+IF (STRCMP("\1", "hl") == 0) || (STRCMP("\1", "de") == 0) || (STRCMP("\1", "bc") == 0)
+__r1 EQUS STRSUB("\1",1,1)
+__r2 EQUS STRSUB("\1",2,1)
+
+    ld a, __r1
+    ld [HDMA1], a
+    ld a, __r2
+    ld [HDMA2], a
+
+PURGE __r1
+PURGE __r2
+
+ELSE
     ld a, ((\1) >> 8)
     ld [HDMA1], a
     ld a, ((\1) & $FF)
     ld [HDMA2], a
+
+ENDC
 
     ld a, ((\2) >> 8)
     ld [HDMA3], a
@@ -174,8 +188,41 @@ ENDC
 MemCopyFixedDest: MACRO
 ; \1 = source, \2 = destination (fixed), \3 = byte count
     ld hl, \1
-    ld c, (\2 & $FF)
+    ld c, (\2) & $FF
     ld b, \3
     call MemCopyFixedDestRoutine
     ENDM
-    
+
+MemClear: MACRO
+; \1 = destination, \2 = byte count
+    ld hl, \1
+    ld b, \2
+    call MemClearRoutine
+    ENDM
+
+; 16-bit Addition
+
+AddTo16: MACRO
+; \1 = destination (register pair), \2 = value (can be a, or a 16-bit value)
+__r1 EQUS STRSUB("\1",1,1)
+__r2 EQUS STRSUB("\1",2,1)
+
+IF STRCMP("\2", "a") != 0
+    add a, \2 % $100
+    ld __r2, a
+    adc a, \2 / $100
+    sub a, __r2
+    ld __r1, a
+
+ELSE
+    add a, __r2
+    ld __r2, a
+    jr nc, .NoCarry\@
+    inc __r1
+.NoCarry\@
+ENDC
+
+PURGE __r1
+PURGE __r2
+    ENDM
+

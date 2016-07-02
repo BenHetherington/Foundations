@@ -99,16 +99,17 @@ ShowTextBox::
     ld a, ($100 - 4)
     add a, [hl]
     ld [hl], a
+    
     cp (144 - 4)
     jr z, .SetMapLayout
+
     cp (144 - 24)
     jr nc, .AnimationSoundFX
+
     cp (144 - 48)
     jr nz, .AnimationLoop
 
-.DelayReturn
-    ld c, 8
-    jp WaitFrames
+    jp WaitFrame
 
 OpeningSound
     db %00010001, %10000101

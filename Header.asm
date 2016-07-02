@@ -36,7 +36,7 @@ RST_30:
 	rst $38
 
 SECTION	"rst $38", ROM0[$38]
-InvalidInstruction:
+InvalidInstruction::
     ld b, b
 	di
 .Loop
