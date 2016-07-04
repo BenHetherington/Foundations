@@ -10,6 +10,8 @@ INCLUDE "Strings/charmap.inc"
 SECTION "Quick-access Variables", HRAM
 VBlankOccurred:: db
 ResetDisallowed:: db
+ButtonsPressed:: db
+ButtonsHeld:: db
 
 SECTION "General Variables", WRAM0
 PlayingOnGBA:: db
@@ -84,6 +86,10 @@ GameStartup:
 
 ; Set up the OAM DMA Subroutine
     MemCopy DMAWaitInROM, OAMDMAWait, 8
+
+    xor a
+    ldh [ButtonsPressed], a
+    ldh [ButtonsHeld], a
 
 .SRAMTest
     call EnableSRAM
@@ -626,8 +632,10 @@ VBlankHandler::
     xor a
     ldh [VBlankOccurred], a
 
-.Anim
+    call HandleButtons
     call SoundEngineUpdate
+
+.Anim
     call TempAnim
 
     pop hl ; Pop everything
@@ -808,4 +816,35 @@ VerifyChecksum:
     PopROMBank
     call DisableDoubleSpeed
     ld a, b
+    ret
+
+
+HandleButtons::
+    ld c, (JOYP & $FF)
+    ld a, %11011111 ; Select buttons
+    ld [$FF00+c], a
+
+    ld a, [$FF00+c]
+    cpl
+    and a, %00001111
+    ld b, a
+
+    ld a, %11101111 ; Select directions
+    ld [$FF00+c], a
+
+    ld a, [$FF00+c]
+    cpl
+    and a, %00001111
+    swap a
+    or a, b
+
+    ld b, a
+    ldh a, [ButtonsHeld]
+
+    xor a, b
+    and a, b
+
+    ldh [ButtonsPressed], a
+    ld a, b
+    ldh [ButtonsHeld], a
     ret

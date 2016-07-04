@@ -7,7 +7,6 @@ PrepareOverworld::
 ; To be called before entering the overworld game loop
 ; Prepares sprites, map, etc.
     call AddPlayerToScreen
-    ; TODO: Load map
     call LoadMap
     ; TODO: Load other NPCs
 
@@ -20,7 +19,6 @@ PrepareOverworld::
 
 OverworldGameLoop::
 ; The main game loop for the overworld!
-
     call HandlePlayer
 
     call WaitFrame
@@ -43,14 +41,11 @@ HandleOverworldController:
 ; TODO: Need to check if a button has been pressed down (not as present, and if the button is currently pressed)
     SwitchWRAMBank BANK(PlayerAnimationFrame)
 
-    ld hl, JOYP
-    ld a, %11011111 ; Select buttons
-    ld [hl], a
-    ld a, [hl]
+    ldh a, [ButtonsPressed]
 
 .CheckA
     bit 0, a
-    jr nz, .CheckDirection
+    jr z, .CheckDirection
 
     ; The A button has been pressed
     call ShowTextBox
@@ -63,11 +58,8 @@ HandleOverworldController:
     xor a
     ld [VBK], a
 
-    ld a, %11101111 ; Select buttons
-    ld [hl], a
-    ld a, [hl]
-
-    cpl
+    ldh a, [ButtonsHeld]
+    swap a
     and a, %00001111
     dec a
 
@@ -80,8 +72,27 @@ HandleOverworldController:
     cp 6 ; Impossible combination
     ret z
 
-.GetMoving
+.CheckDiagonal
     ld [PlayerAnimationDirection], a
+    ld b, a
+
+    cp 4 ; Above 'Up'
+    jr c, .NotDiagonal
+
+    cp 7
+    jr z, .NotDiagonal
+
+.IsDiagonal
+    ld a, 4
+    jr .GetMoving
+
+.NotDiagonal
+    xor a
+    ; fallthrough
+
+.GetMoving
+    ld [PlayerAnimationDiagonalFrameSkip], a
+    ld a, b
 
     sla a
     ld hl, .IncrementData
@@ -94,11 +105,9 @@ HandleOverworldController:
 
     ld a, 16
     ld [PlayerAnimationFrame], a
-    jp AnimateMovement ; TODO: Jump to something that'll animate the whole map too
+    jp AnimateMovement ; TODO: Jump to something that'll animate the whole map too (if needed)
 
 .IncrementData
-; TODO: Make diagonal movement take longer than non-diagonal movement
-; (It feels a bit EarthBound Beginnings-y and I don't like it)
     db  1,  0  ; Right
     db -1,  0  ; Left
     db  0,  0
@@ -144,6 +153,20 @@ AnimateMovement::
     SwitchROMBank BANK(TempDownStanding)
     SwitchWRAMBank BANK(PlayerAnimationFrame)
 
+    ld a, [PlayerAnimationDiagonalFrameSkip]
+    or a
+    jr z, .Continue
+
+    dec a
+    ld [PlayerAnimationDiagonalFrameSkip], a
+    jr nz, .Continue
+
+.DiagonalFrameSkip
+    ld a, 4
+    ld [PlayerAnimationDiagonalFrameSkip], a
+    ret
+
+.Continue
     ld a, [SCY]
     ld hl, PlayerMovementIncrementY
     add a, [hl]
@@ -257,7 +280,7 @@ GetNewFrame:
     ld hl, TempDownStanding
     ld b, a
     AddTo16 hl, a
-    jr .UpOrDownFlip
+    ; fallthrough
 
 .UpOrDownFlip
     ld a, b
@@ -332,7 +355,6 @@ GetNewFrame:
     dw .Down                ; Down
     dw .RightDown           ; Right-down
     dw .LeftDown            ; Left-down
-    ; All other values are not possible; must handle!
 
 
 LoadMap::
@@ -370,7 +392,7 @@ PlayerAnimationStateStart:
 PlayerAnimationFrame: db ; Is 0 if not active
 PlayerAnimationDirection: db
 PlayerAnimationFlip: db
-PlayerAnimationIsRunning: db
+PlayerAnimationDiagonalFrameSkip: db
 PlayerMovementIncrementX: db
 PlayerMovementIncrementY: db
 PlayerAnimationStateEnd:

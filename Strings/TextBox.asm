@@ -95,6 +95,7 @@ ShowTextBox::
 
 .AnimationLoop
 ; Move the window up by 4px every frame, until it's 48px tall.
+; TODO: Need to ensure that sprites are hidden behind the window!
     call WaitFrame
     ld a, ($100 - 4)
     add a, [hl]

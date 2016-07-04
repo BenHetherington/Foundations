@@ -366,17 +366,14 @@ Wait
 .Loop
     call WaitFrame
 
-    ld a, %00010000 ; Select buttons
-    ld [JOYP], a
-
 .CheckA
-    ld a, [JOYP]
-    bit 0, a ; Check the A button (0 = pressed)
-    jr z, .Continue
+    ldh a, [ButtonsPressed]
+    bit 0, a ; Check the A button
+    jr nz, .Continue
 
 .CheckB
     bit 1, a ; Check the B button
-    jr nz, .Loop
+    jr z, .Loop
 
 .Continue
     xor a
