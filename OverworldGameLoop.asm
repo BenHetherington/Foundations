@@ -14,12 +14,17 @@ PrepareOverworld::
     ld hl, LCDC
     set 2, [hl]
 
+; Reset encounter flag
+    xor a
+    ld [CheckEncounterFlag], a
+
     ret
 
 
 OverworldGameLoop::
 ; The main game loop for the overworld!
     call HandlePlayer
+    call CheckEncounter
 
     call WaitFrame
     jr OverworldGameLoop
@@ -119,9 +124,34 @@ HandleOverworldController:
     db  1,  1  ; Right-down
     db -1,  1  ; Left-down
 
+CheckEncounter:
+    ld a, [CheckEncounterFlag]
+    or a
+    ret z
+
+.PerformEncounterCheck
+    xor a
+    ld [CheckEncounterFlag], a
+
+    ; TODO: Allow you to move a certain number of steps without another encounter
+
+    call Random
+    cp 15 ; This controls the encounter rate!
+    ret nc
+
+.StartEncounter
+; TODO: Replace this stub, and actually transition to a battle
+    call ShowTextBox
+    ld hl, EncounterMessage
+    call PrintString
+    jp CloseTextBox
+
 
 PlaceholderMessage:
     db "No problem here.~\\"
+
+EncounterMessage:
+    db "An insignificant\nbug appeared!~\\"
 
 
 ; TODO: Refactor overworld character handling to somewhere else
@@ -155,18 +185,18 @@ AnimateMovement::
 
     ld a, [PlayerAnimationDiagonalFrameSkip]
     or a
-    jr z, .Continue
+    jr z, .MoveMap
 
     dec a
     ld [PlayerAnimationDiagonalFrameSkip], a
-    jr nz, .Continue
+    jr nz, .MoveMap
 
 .DiagonalFrameSkip
     ld a, 4
     ld [PlayerAnimationDiagonalFrameSkip], a
     ret
 
-.Continue
+.MoveMap
     ld a, [SCY]
     ld hl, PlayerMovementIncrementY
     add a, [hl]
@@ -179,7 +209,13 @@ AnimateMovement::
 
     ld hl, PlayerAnimationFrame
     dec [hl]
+    jr nz, .AnimateSprite
 
+.SetEncounterFlag
+    ld a, 1
+    ld [CheckEncounterFlag], a
+
+.AnimateSprite
     ld a, [hl+]
     ld b, a
     and a, %111
@@ -396,6 +432,9 @@ PlayerAnimationDiagonalFrameSkip: db
 PlayerMovementIncrementX: db
 PlayerMovementIncrementY: db
 PlayerAnimationStateEnd:
+
+; TODO: Should this be in a different section?
+CheckEncounterFlag: db
 
 SECTION "Temp Player", ROMX[$6000]
 
