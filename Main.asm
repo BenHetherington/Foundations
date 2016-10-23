@@ -13,6 +13,8 @@ ResetDisallowed:: db
 ButtonsPressed:: db
 ButtonsHeld:: db
 
+GradientData:: ds 2 * 18
+
 SECTION "General Variables", WRAM0
 PlayingOnGBA:: db
 TempAnimFrame:: db
@@ -699,22 +701,26 @@ HBlankHandler::
 
     push bc
 
-    ld a, [BGPI]
-    ld b, a
-
-    xor a
-    ld [BGPI], a
     ld a, [LY]
+    ld b, a ; Save LY for later on
+    rrca
+    rrca
+    and a, %00111110
+
+    add a, GradientData & $FF
     ld c, a
-    srl a
-    srl a
-    srl a
+
+    ld a, %10000000
+    ld [BGPI], a
+
+    ld a, [$FF00+c]
+    ld [BGPD], a
+
+    inc c
+    ld a, [$FF00+c]
     ld [BGPD], a
 
     ld a, b
-    ld [BGPI], a
-
-    ld a, c
     add a, 8
     cp $90
     jr c, .Continue
