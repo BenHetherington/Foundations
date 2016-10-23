@@ -731,18 +731,18 @@ MoveToNextLine:
     jr .IncorrectLine
 
 .MoveToLine2
-    ld a, (TilesPosition + TilesPerLine + $10) >> 8
+    ld a, Line2TilePointer >> 8
     ld [hl-], a
-    ld a, (TilesPosition + TilesPerLine + $10) & $FF
+    ld a, Line2TilePointer & $FF
     ld [hl], a
     ld a, 4
     ld [TextSubtilesPositionY], a
     ret
 
 .MoveToLine3
-    ld a, (TilesPosition + (3 * TilesPerLine) + $10) >> 8
+    ld a, Line3TilePointer >> 8
     ld [hl-], a
-    ld a, (TilesPosition + (3 * TilesPerLine) + $10) & $FF
+    ld a, Line3TilePointer & $FF
     ld [hl], a
     xor a
     ld [TextSubtilesPositionY], a

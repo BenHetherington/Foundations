@@ -93,6 +93,8 @@ GameStartup:
     ldh [ButtonsPressed], a
     ldh [ButtonsHeld], a
 
+    call WaitFrame ; Wait until the reset keys have been released
+
 .SRAMTest
     call EnableSRAM
 
@@ -131,9 +133,23 @@ GameStartup:
 
     MemClear OAMData, 160
 
+    ; TODO: Remove
+    call ShowTextBox
+    ld hl, SomeKindaPrompt
+    call PrintString
+    ld hl, YesNoPrompt
+    call Prompt
+    push af
+    call CloseTextBox
+    pop af
+    or a
+    jr nz, .Text
+
+.Overworld
     call PrepareOverworld
     jp OverworldGameLoop
 
+.Text
     call ShowTextBox
     ld hl, AssemblyString
     call PrintString
@@ -152,6 +168,13 @@ GameStartup:
     call FastFadeText
     call ClearTextBox
     call SetDefaultTextColours
+
+    ld hl, EraseSaveDataConfirmation
+    call PrintString
+    ld hl, NoYesPrompt
+    call Prompt
+    or a
+    jr z, .SkipSave
 
     call EnableDoubleSpeed
 
@@ -189,6 +212,7 @@ GameStartup:
     ld b, a
     call ReplaceLastTile
 
+.SkipSave
     call CloseTextBox
 
     call FastFadeToBlack
@@ -223,9 +247,12 @@ GameStartup:
     call FastFadeToWhite
     call ShowTextBox
 
-    ld hl, FakeRPGTextB
-    ; call PrintString
-    ; jr .FillerHalt
+    ld hl, WhatNow
+    call PrintString
+
+    ld hl, BattleScreenPrompt
+    call Prompt
+    jr .FillerHalt
 
 ;    SwitchSpeed
     ;ld hl, FakeRPGText
@@ -299,11 +326,8 @@ FakeRPGTextB:
     db "Sam used\nFunctional Harmony!\n"
     db "_`_", 15, "...but nothing happened.~\\'"
 
-FakeRPGText:
-    db "What now?\n"
-    db "§", %111, "_@_", 1, $00, $00, "_@_", 2, $00, $00, "_#2_" ; Setting max speed, no SFX, black colours
-    db "^_right_^^", "Fight", "\t^_#1_ ", "Magic",  "\t\t ", "Taunt\n"
-    db "\t", "Item",  "\t^^ ",    "Tattle", "\t ",   "Run Away", "§", 0, "\\"
+WhatNow:
+    db "What now?\\"
 
 FileOptionsTest:
     db "_@_", 2, GreenColour, "_@_", 1, BlueColour
@@ -326,15 +350,39 @@ FakeQuicksaveText:
     ; "Don't throw the Game Boy into a fire."
     ; "Don't corrupt your save data."
 
+SomeKindaPrompt:
+    db "Is this some kinda prompt?\\"
+
+GameOverEncouragement1:
+    db "Come on! ```_@_", 1, GreenColour, "_#1_You can do it!~\\"
+
+GameOverEncouragement2:
+    db "That didn't go so well...~\\"
+
+; TODO: Add another encouragement message?
+
+GameOverPrompt:
+    db "Give it another go?\\"
+
+GameOverQuit:
+    db "_PLAYER_ realised that it\n"
+    db "was just a bad dream.~\\" ; No EarthBound references here...
+
+EraseSaveDataConfirmation:
+    db "Erase all save data?````\n"
+    db "_@_", 1, RedColour, "_#1_"
+    db "T`h`i`s` `c`a`n`'`t` `b`e` `u`n`d`o`n`e`._`_", 15 ,"\\"
+
 ; Fast Fade Functions
 ; TODO: Refactor these, since there's tonnes of code reuse!
 
-BattleTextFadeIn:
-; TODO; Redo this
+BattleTextFadeIn::
+; TODO: Redo this
 ; Instead, have the colour fade to white, and then fade the selection to blue
 ; This enables me to use one less colour, enabling me to use the 'other' spare
 ; colour in the text above the selection
 ; Also, don't make this battle-specific!
+; Plus, fade in the colour for the cursor.
 
     ld c, $40 ; Colour
     ld b, 3 ; Counter

@@ -9,7 +9,10 @@ InitSoundEngine::
     dec b
     jr nz, .Loop
 
-    ret
+    ; TODO: Reset the sound hardware!
+
+    xor a
+    ; fallthrough
 
 PlayMusic::
 ; Assume that a contains the song to be played

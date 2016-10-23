@@ -258,6 +258,7 @@ FastFadeText::
     jr nz, .BGPaletteLoop
 
     call WaitFrame
+    call WaitFrame
     dec d
     jr nz, .OuterLoop
     ret

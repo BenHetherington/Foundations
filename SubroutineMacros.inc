@@ -75,6 +75,11 @@ SwitchROMBankFromRegister: MACRO
     ld [ROMBankSwitchLocation], a
     ENDM
 
+PushSwitchROMBank: MACRO
+    PushROMBank
+    SwitchROMBank \1
+    ENDM
+
 
 PushROMBank: MACRO
     ldh a, [CurrentROMBank]
@@ -105,6 +110,10 @@ PushWRAMBank: MACRO
     push af
     ENDM
 
+PushSwitchWRAMBank: MACRO
+    PushWRAMBank
+    SwitchWRAMBank \1
+    ENDM
 
 PopWRAMBank: MACRO
     pop af
