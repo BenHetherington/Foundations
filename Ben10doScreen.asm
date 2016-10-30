@@ -156,6 +156,9 @@ ShowBen10doScreen::
     ld a, %10010011
     ld [LCDC], a
 
+    ld a, 4
+    call PlayMusic
+
     xor a
     ld [VBK], a
 

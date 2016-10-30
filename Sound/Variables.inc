@@ -13,6 +13,7 @@ PU1FXWait: db
 PU2MuWait: db
 PU2FXWait: db
 WAVMuWait: db
+WAVFXWait: db
 NOIMuWait: db
 NOIFXWait: db
 

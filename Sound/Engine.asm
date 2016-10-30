@@ -20,7 +20,6 @@ ENDM
 CalculateBackupAddress: MACRO
 ; Given the backup memory address for PU1Mu, calculate the equivalent for the channel in c
 ; The result will be in hl.
-; TODO: Ensure that the memory layout suits this!
     ld a, c
 
     add a, (\1) % $100
@@ -204,16 +203,7 @@ UpdateChannel
 
 .GetLength
     ld a, [hl+]
-
-    push hl
-    ld hl, PU1MuWait
-    ld b, 0
-    add hl, bc
-
-    ld [hl], a
-    pop hl
-
-    jp .FinishCommandLoop
+    jp .DoWait
 
 
 .KillNote
@@ -439,6 +429,23 @@ UpdateChannel
 .EndLength
     jp .CheckNoteCommand ; TODO: Make jr?
 
+.Wait
+    pop hl
+    ld a, [hl+]
+
+.DoWait
+; Also used to wait after each note
+    push hl
+    ld hl, PU1MuWait
+    ld b, 0
+    add hl, bc
+
+    ld [hl], a
+    pop hl
+
+    jp .FinishCommandLoop
+
+
 .InlineWaveData
     pop hl
     ld de, $FF30 ; Wave data location
@@ -447,6 +454,12 @@ UpdateChannel
     call SmallMemCopyRoutine
     pop bc
     jp .CheckNoteCommand ; TODO: Make jr?
+
+.End
+    pop hl
+    ld hl, 0
+    jr .FinishCommandLoop
+
 
 .FinishCommandLoop
     push hl             ; Writing the new address into memory
@@ -482,7 +495,8 @@ UpdateChannel
     dw .Jump            ; Jump
     dw .Placeholder     ; Call
     dw .Placeholder     ; Ret
-    dw .Placeholder     ; End
+    dw .End             ; End
+    dw .Wait            ; Wait
 
 CalculateAddress
 ; TODO: Does this need to be a subroutine? Replace with 16-bit macro?

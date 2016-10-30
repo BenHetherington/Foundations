@@ -152,7 +152,7 @@ SawtoothWave EQU $00
 ; Command bytes
 ; (Numbers less than $80 are reserved for notes)
 CommandByte EQU $80
-BiggestCommand EQU $90
+BiggestCommand EQU $91
 
 EnvelopeByte EQU $80
 TempoByte EQU $81
@@ -167,6 +167,7 @@ WaveDataByte EQU $89
 InlineWaveDataByte EQU $8C
 LengthByte EQU $8A
 MicrotuneByte EQU $8B
+WaitByte EQU $91
 
 ; Organisational bytes
 SoundJPByte EQU $8D
@@ -285,6 +286,10 @@ length: MACRO
 
 microtune: MACRO
     db MicrotuneByte, \1
+    ENDM
+
+wait: MACRO
+    db WaitByte, \1
     ENDM
 
 

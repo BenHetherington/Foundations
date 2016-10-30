@@ -48,4 +48,12 @@ MusicPointers::
     dw Idea0906PU2
     dw Idea0906WAV
     dw NO_DATA
-    
+
+.Ben10doIntro
+    ; ID = 04
+    ; For the Ben10do Screen
+    db BANK(Ben10doIntroPU1)
+    dw Ben10doIntroPU1
+    dw Ben10doIntroPU2
+    dw Ben10doIntroWAV
+    dw Ben10doIntroNOI

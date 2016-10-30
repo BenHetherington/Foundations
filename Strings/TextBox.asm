@@ -162,7 +162,7 @@ PlayTextBeep::
     ld a, $31
     ld [NR12], a
 
-    ld a, %10001000
+    ld a, %11010110
     ld [NR13], a
 
     ld a, %11000110

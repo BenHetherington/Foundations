@@ -52,7 +52,7 @@ PlayMusic::
     ld [bc], a
     inc bc
     dec d
-    jr z, .CleanUp
+    jr z, .SetInitialWait
 
     bit 0, d
     jr nz, .AddressLoop
@@ -64,7 +64,7 @@ PlayMusic::
     jr .AddressLoop
 
 
-.CleanUp
+.SetInitialWait
     ld a, 1
     ld [MuCounter], a
     ld [PU1MuWait], a
@@ -72,6 +72,11 @@ PlayMusic::
     ld [WAVMuWait], a
     ld [NOIMuWait], a
 
+.ResetPan
+    ld a, $FF
+    ld [NR51], a
+
+.CleanUp
     PopROMBank
     pop de
     pop bc

@@ -123,10 +123,10 @@ GameStartup:
     ; ld c, 60
     ; call WaitFrames
 
+    CallToOtherBank ShowBen10doScreen
+
     ld a, 3
     call PlayMusic
-
-    CallToOtherBank ShowBen10doScreen
 
     ld hl, LCDC
     res 4, [hl]
