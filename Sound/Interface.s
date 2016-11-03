@@ -72,7 +72,11 @@ PlayMusic::
     ld [WAVMuWait], a
     ld [NOIMuWait], a
 
+.ResetTables
+    MemClear PU1MuTable, 2 * 8
+
 .ResetPan
+; TODO: Also set backup pan
     ld a, $FF
     ld [NR51], a
 

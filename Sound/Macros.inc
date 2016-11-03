@@ -1,10 +1,10 @@
 ; Here's some syntax:
 
 ; note C_3, 1 (pitch, length in semiquavers) (use ___ as pitch to kill note)
-; envelope $A8 (as LSDJ)
+; envelope $A8 (copied directly to NRx2)
 ; vol 3 (for wave channel)
 ; tempo 50 (still yet to decide how this works)
-; table 1 (table ID, use 0 to stop table) (still yet to decide how this works)
+; table ArpTable (pointer to a table to use)
 ; slide 3 (start using slide from next note onwards; use 0 to stop)
 ; mastervol $77 (copied directly to NR50)
 ; pan L_ (either LR, L_, _R, or __)
@@ -24,119 +24,118 @@
 ; soundret (returns from the phrase)
 ; soundend (stops the sound)
 
-
-; tables will be in similar vain to LSDJ; still yet to implement precisely how
-
 ; Note equates
-___ EQU $00 ; Not really a note, but will silence the channel
-C_3 EQU $01
-C#3 EQU $02
-D_3 EQU $03
-D#3 EQU $04
-E_3 EQU $05
-F_3 EQU $06
-F#3 EQU $07
-G_3 EQU $08
-G#3 EQU $09
-A_3 EQU $0A
-A#3 EQU $0B
-B_3 EQU $0C
-C_4 EQU $0D
-C#4 EQU $0E
-D_4 EQU $0F
-D#4 EQU $10
-E_4 EQU $11
-F_4 EQU $12
-F#4 EQU $13
-G_4 EQU $14
-G#4 EQU $15
-A_4 EQU $16
-A#4 EQU $17
-B_4 EQU $18
-C_5 EQU $19
-C#5 EQU $1A
-D_5 EQU $1B
-D#5 EQU $1C
-E_5 EQU $1D
-F_5 EQU $1E
-F#5 EQU $1F
-G_5 EQU $20
-G#5 EQU $21
-A_5 EQU $22
-A#5 EQU $23
-B_5 EQU $24
-C_6 EQU $25
-C#6 EQU $26
-D_6 EQU $27
-D#6 EQU $28
-E_6 EQU $29
-F_6 EQU $2A
-F#6 EQU $2B
-G_6 EQU $2C
-G#6 EQU $2D
-A_6 EQU $2E
-A#6 EQU $2F
-B_6 EQU $30
-C_7 EQU $31
-C#7 EQU $32
-D_7 EQU $33
-D#7 EQU $34
-E_7 EQU $35
-F_7 EQU $36
-F#7 EQU $37
-G_7 EQU $38
-G#7 EQU $39
-A_7 EQU $3A
-A#7 EQU $3B
-B_7 EQU $3C
-C_8 EQU $3D
-C#8 EQU $3E
-D_8 EQU $3F
-D#8 EQU $40
-E_8 EQU $41
-F_8 EQU $42
-F#8 EQU $43
-G_8 EQU $44
-G#8 EQU $45
-A_8 EQU $46
-A#8 EQU $47
-B_8 EQU $48
-C_9 EQU $49
-C#9 EQU $4A
-D_9 EQU $4B
-D#9 EQU $4C
-E_9 EQU $4D
-F_9 EQU $4E
-F#9 EQU $4F
-G_9 EQU $50
-G#9 EQU $51
-A_9 EQU $52
-A#9 EQU $53
-B_9 EQU $54
-C_A EQU $55
-C#A EQU $56
-D_A EQU $57
-D#A EQU $58
-E_A EQU $59
-F_A EQU $5A
-F#A EQU $5B
-G_A EQU $5C
-G#A EQU $5D
-A_A EQU $5E
-A#A EQU $5F
-B_A EQU $60
-C_B EQU $61
-C#B EQU $62
-D_B EQU $63
-D#B EQU $64
-E_B EQU $65
-F_B EQU $66
-F#B EQU $67
-G_B EQU $68
-G#B EQU $69
-A_B EQU $6A
-A#B EQU $6B
-B_B EQU $6C
+___ EQU $FF ; Not really a note, but will silence the channel
+C_3 EQU $00
+C#3 EQU $01
+D_3 EQU $02
+D#3 EQU $03
+E_3 EQU $04
+F_3 EQU $05
+F#3 EQU $06
+G_3 EQU $07
+G#3 EQU $08
+A_3 EQU $09
+A#3 EQU $0A
+B_3 EQU $0B
+C_4 EQU $0C
+C#4 EQU $0D
+D_4 EQU $0E
+D#4 EQU $0F
+E_4 EQU $10
+F_4 EQU $11
+F#4 EQU $12
+G_4 EQU $13
+G#4 EQU $14
+A_4 EQU $15
+A#4 EQU $16
+B_4 EQU $17
+C_5 EQU $18
+C#5 EQU $19
+D_5 EQU $1A
+D#5 EQU $1B
+E_5 EQU $1C
+F_5 EQU $1D
+F#5 EQU $1E
+G_5 EQU $1F
+G#5 EQU $20
+A_5 EQU $21
+A#5 EQU $22
+B_5 EQU $23
+C_6 EQU $24
+C#6 EQU $25
+D_6 EQU $26
+D#6 EQU $27
+E_6 EQU $28
+F_6 EQU $29
+F#6 EQU $2A
+G_6 EQU $2B
+G#6 EQU $2C
+A_6 EQU $2D
+A#6 EQU $2E
+B_6 EQU $2F
+C_7 EQU $30
+C#7 EQU $31
+D_7 EQU $32
+D#7 EQU $33
+E_7 EQU $34
+F_7 EQU $35
+F#7 EQU $36
+G_7 EQU $37
+G#7 EQU $38
+A_7 EQU $39
+A#7 EQU $3A
+B_7 EQU $3B
+C_8 EQU $3C
+C#8 EQU $3D
+D_8 EQU $3E
+D#8 EQU $3F
+E_8 EQU $40
+F_8 EQU $41
+F#8 EQU $42
+G_8 EQU $43
+G#8 EQU $44
+A_8 EQU $45
+A#8 EQU $46
+B_8 EQU $47
+C_9 EQU $48
+C#9 EQU $49
+D_9 EQU $4A
+D#9 EQU $4B
+E_9 EQU $4C
+F_9 EQU $4D
+F#9 EQU $4E
+G_9 EQU $4F
+G#9 EQU $50
+A_9 EQU $51
+A#9 EQU $52
+B_9 EQU $53
+C_A EQU $54
+C#A EQU $55
+D_A EQU $56
+D#A EQU $57
+E_A EQU $58
+F_A EQU $59
+F#A EQU $5A
+G_A EQU $5B
+G#A EQU $5C
+A_A EQU $5D
+A#A EQU $5E
+B_A EQU $5F
+C_B EQU $60
+C#B EQU $61
+D_B EQU $62
+D#B EQU $63
+E_B EQU $64
+F_B EQU $65
+F#B EQU $66
+G_B EQU $67
+G#B EQU $68
+A_B EQU $69
+A#B EQU $6A
+B_B EQU $6B
+
+; TODO: Deal with $6C-$7F
 
 ; Pan equates
 LR EQU %00010001
@@ -147,16 +146,14 @@ __ EQU %00000000
 ; Wave equates (for use with wavedata)
 SawtoothWave EQU $00
 
-; TODO: Deal with $6D-$7F
-
 ; Command bytes
 ; (Numbers less than $80 are reserved for notes)
 CommandByte EQU $80
-BiggestCommand EQU $91
+BiggestCommand EQU $94
 
 EnvelopeByte EQU $80
 TempoByte EQU $81
-TableByte EQU $82
+SetTableByte EQU $82
 SlideByte EQU $83
 MasterVolByte EQU $84
 PanByte EQU $85
@@ -164,29 +161,41 @@ SweepByte EQU $86
 VibratoByte EQU $87
 WaveformByte EQU $88
 WaveDataByte EQU $89
-InlineWaveDataByte EQU $8C
-LengthByte EQU $8A
-MicrotuneByte EQU $8B
-WaitByte EQU $91
+InlineWaveDataByte EQU $8A
+LengthByte EQU $8B
+MicrotuneByte EQU $8C
+WaitByte EQU $8D
+TableWaitByte EQU $8E
+TransposeByte EQU $8F
+TableTransposeByte EQU $90
+KillNoteByte EQU $91
 
 ; Organisational bytes
-SoundJPByte EQU $8D
-SoundCallByte EQU $8E
-SoundRetByte EQU $8F
-SoundEndByte EQU $90
+SoundJPByte EQU $92
+SoundCallByte EQU $93
+SoundRetByte EQU $94
+SoundEndByte EQU $95
 
 ; Command macros
 
 note: MACRO
-    ; e.g. note C_3, 5
-    db \1, \2
+; Plays note \1, and then wait for \2 ticks
+; e.g. note C_3, 5
+; Not to be used in tables
+    IF \1 != ___
+        db \1, \2
+    ELSE
+        db KillNoteByte, \2
+    ENDC
     ENDM
 
 envelope: MACRO
+; Use the given envelope (volume/attack/release)
     db EnvelopeByte, \1
     ENDM
 
 vol: MACRO
+; Use the given volume for the WAV channel
     db EnvelopeByte
     IF \1 < 0 || \1 > 3
         WARN "vol macro must have an operand of 0-3."
@@ -200,36 +209,45 @@ vol: MACRO
     ENDM
 
 tempo: MACRO
+; Set the music tempo to the given value
     db TempoByte, \1
     ENDM
 
 table: MACRO
-    db TableByte, \1
+; Set the table to use for this channel (set to $0000 to revert)
+    db SetTableByte
+    dw \1
     ENDM
 
 slide: MACRO
+; Begin to slide to new notes, with \1 speed
     db SlideByte, \1
     ENDM
 
 mastervol: MACRO
+; Set the master volume of the Game Boy
     db MasterVolByte, \1
     ENDM
 
 pan: MACRO
-    ; TODO: Can merge into one byte (2-bit)
+; Pan the current sound channel left, right, neither, or centre
+; TODO: Can merge into one byte (2-bit)
     db PanByte, \1
     ENDM
 
 sweep: MACRO
+; Start to sweep up/down from notes in PU1
     db SweepByte, \1 ; Might not be implemented at first
     ENDM
 
 vibrato: MACRO
+; Add a vibrato effect (with \1 intensity)
     db VibratoByte, \1
     ENDM
 
 waveform: MACRO
-    ; TODO: Can merge into one byte (2-bit)
+; Set the waveform of PU1 or PU2
+; TODO: Can merge into one byte (2-bit)
     db WaveformByte
 
     IF \1==12.5
@@ -257,10 +275,12 @@ waveform: MACRO
     ENDM
 
 wavedata: MACRO
+; Set the wavedata to use for the WAV channel
     db WaveDataByte, \1
     ENDM
 
 inlinewavedata: MACRO
+; Set the wavedata to use for the WAV channel
 ; This is to be discouraged; if possible, don't include it at all!
     db InlineWaveDataByte
 Position SET 1
@@ -271,6 +291,7 @@ ENDR
     ENDM
 
 length: MACRO
+; Set the length to use for non-WAV notes
     db LengthByte
 
     IF !STRCMP("\1", "inf")
@@ -285,31 +306,57 @@ length: MACRO
     ENDM
 
 microtune: MACRO
+; Detune notes by \1
     db MicrotuneByte, \1
     ENDM
 
 wait: MACRO
+; Wait for \1 ticks before continuing
+; Not to be used in tables
     db WaitByte, \1
+    ENDM
+
+twait: MACRO
+; Wait for the next tick before continuing
+; Only for use in tables
+    db TableWaitByte
+    ENDM
+
+transpose: MACRO
+; Transpose future notes by \1 semitones
+    db TransposeByte, \1
+    ENDM
+
+ttrans: MACRO
+; Transpose the last note by \1 semitones
+; Designed for use in tables
+    db TableTransposeByte, \1
     ENDM
 
 
 ; Organisational macros
 
 soundjp: MACRO
+; Jump to a different part of the sound data
     db SoundJPByte
     dw \1
     ENDM
 
 soundcall: MACRO
+; Call a reusable phrase
+; Not to be used in tables
     db SoundCallByte
     dw \1
     ENDM
 
 soundret: MACRO
+; Return from a phrase
+; Not to be used in tables
     db SoundRetByte
     ENDM
 
 soundend: MACRO
+; End a sound channel's table or music
     db SoundEndByte
     ENDM
 

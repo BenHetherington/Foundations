@@ -52,6 +52,16 @@ WAVFXLoopCounter: db
 NOIMuLoopCounter: db
 NOIFXLoopCounter: db
 
+; Note backup, so it can be transposed by a table
+PU1MuNoteBackup: db
+PU1FXNoteBackup: db
+PU2MuNoteBackup: db
+PU2FXNoteBackup: db
+WAVMuNoteBackup: db
+WAVFXNoteBackup: db
+NOIMuNoteBackup: db
+NOIFXNoteBackup: db
+
 ; Backup for if the envelope is changed by FX channel
 PU1MuEnvelopeBackup: db
 PU1FXEnvelopeBackup: db
@@ -84,16 +94,15 @@ NOIFXLength: db
 
 ; TODO: Add pan backup
 
-; Tables
-; high nibble (7-4) = Table ID; low nibble (3-0) = Table Position
-PU1MuTable: db
-PU1FXTable: db
-PU2MuTable: db
-PU2FXTable: db
-WAVMuTable: db
-WAVFXTable: db
-NOIMuTable: db
-NOIFXTable: db
+; Table Pointers
+PU1MuTable: dw
+PU1FXTable: dw
+PU2MuTable: dw
+PU2FXTable: dw
+WAVMuTable: dw
+WAVFXTable: dw
+NOIMuTable: dw
+NOIFXTable: dw
 
 ; Slide/vibrato active flags
 VibratoOrSlideActive: db ; 1 if either is active, 0 if not; bit 7 = PU1Mu, ..., 0 = NOIFX

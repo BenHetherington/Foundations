@@ -102,14 +102,59 @@ UpdateChannel
 .CheckCounter
     ld b, a
     or a
-    jr nz, .CheckVibratoAndSlide
+    jr nz, .CheckTable
 
     ld hl, PU1MuWait
     ld b, 0
     add hl, bc
 
     dec [hl]
-    jr z, .GetNextCommand
+    jr nz, .CheckTable
+
+    call .GetNextCommand
+
+.UpdateAddress
+    push hl             ; Writing the new address into memory
+    ld hl, PU1MuAddress
+    ld b, 0
+    sla c
+    add hl, bc
+    srl c
+    pop de
+
+    ld a, e
+    ld [hl+], a
+    ld a, d
+    ld [hl], a
+
+.CheckTable
+    sla c
+    CalculateBackupAddress PU1MuTable
+    srl c
+
+    ld a, [hl+]
+    ld h, [hl]
+    ld l, a
+
+    xor a
+    or h ; Check if the MSB is 0
+    jr z, .CheckVibratoAndSlide
+
+    call .GetNextCommandLoop
+
+.UpdateTableAddress
+    push hl             ; TODO: Generalise this!
+    ld hl, PU1MuTable
+    ld b, 0
+    sla c
+    add hl, bc
+    srl c
+    pop de
+
+    ld a, e
+    ld [hl+], a
+    ld a, d
+    ld [hl], a
 
 .CheckVibratoAndSlide
     ; TODO: Implement
@@ -134,11 +179,14 @@ UpdateChannel
 .NoteCommand
     ; TODO: Transpose the note as necessary
 
-    and a ; TODO: Make this a command?
-    jp z, .KillNote
-
+; Writing the note to the backup
     push hl
-    ld hl, FrequencyTable - 2
+    ld d, a
+    CalculateBackupAddress PU1MuNoteBackup
+    ld a, d
+    ld [hl], a
+
+    ld hl, FrequencyTable
 
     ld d, 0
     ld e, a
@@ -197,6 +245,7 @@ UpdateChannel
 .CleanUp
     ld c, b
     pop hl
+    ; fallthrough
 
     ; TODO: Set note length (i.e. NRx1 value!) from PU1MuLength, etc.
     ; TODO: Turn on the wave channel, if necessary!
@@ -205,28 +254,6 @@ UpdateChannel
     ld a, [hl+]
     jp .DoWait
 
-
-.KillNote
-; TODO: Make this a command
-; Stops the current note from playing
-    ld a, c
-    srl a
-    cp 2
-    jr z, .KillWavNote
-
-    ld d, c
-    CalculateChannelAddress NR12
-
-    xor a
-    ld [$FF00+c], a
-
-    ld c, d
-    jr .GetLength
-
-.KillWavNote
-    xor a
-    ld [NR30], a
-    jr .GetLength
 
 .ProcessCommand
 ; Deals with the non-note commands
@@ -255,7 +282,6 @@ UpdateChannel
     
 
 .Envelope
-    ; TODO: Should probably save to the backup envelope in memory, if necessary
     ld d, c ; Backing up c
     CalculateChannelAddress NR12
 
@@ -274,6 +300,28 @@ UpdateChannel
     jp .CheckNoteCommand
 
 
+.KillNote
+; Stops the current note from playing
+    pop hl
+    ld a, c
+    srl a
+    cp 2
+    jr z, .KillWavNote
+
+    ld d, c
+    CalculateChannelAddress NR12
+
+    xor a
+    ld [$FF00+c], a
+
+    ld c, d
+    jr .GetLength
+
+.KillWavNote
+    xor a
+    ld [NR30], a
+    jr .GetLength
+
 
 .Tempo
     pop hl
@@ -290,6 +338,26 @@ UpdateChannel
     ld a, [hl+]
     ld [FXTempo], a
     ld [FXCounter], a
+    jp .GetNextCommandLoop
+
+
+.SetTable
+    pop hl
+    ld a, [hl+]
+    ld e, a
+    ld a, [hl+]
+    ld d, a
+    push hl
+
+    sla c
+    CalculateBackupAddress PU1MuTable
+    srl c ; Restoring c
+
+    ld a, e
+    ld [hl+], a
+    ld [hl], d
+
+    pop hl
     jp .GetNextCommandLoop
 
 
@@ -441,14 +509,56 @@ UpdateChannel
     add hl, bc
 
     ld [hl], a
+    ; fallthrough
+
+.TableWait
+; Can short-circuit to here with the TableWait command
+    pop hl
+    ret
+
+.TableTranspose
+    pop hl
+    ld a, [hl+]
+    push hl
+
+    ld d, a
+    CalculateBackupAddress PU1MuNoteBackup
+    ld a, d
+    add a, [hl]
+
+    ; TODO: Refactor so that we can reuse some code from Note
+    ld hl, FrequencyTable
+
+    ld d, 0
+    ld e, a
+    sla e
+    add hl, de
+
+    ld b, c
+
+    CalculateChannelAddress NR13
+
+; Putting the frequency into a and d
+    ld a, [hl+]
+    ld d, [hl]
+
+    ld [$FF00+c], a
+    inc c
+    ld a, d
+    ; set 6, a ; TODO: Set finite length only if necessary
+
+    ld [$FF00+c], a
+
+    ld c, b
     pop hl
 
-    jp .FinishCommandLoop
+    jp .CheckNoteCommand
 
 
 .InlineWaveData
     pop hl
     ld de, $FF30 ; Wave data location
+    ; TODO: Use ldh memory copying
     push bc
     ld b, $10
     call SmallMemCopyRoutine
@@ -458,30 +568,13 @@ UpdateChannel
 .End
     pop hl
     ld hl, 0
-    jr .FinishCommandLoop
-
-
-.FinishCommandLoop
-    push hl             ; Writing the new address into memory
-    ld hl, PU1MuAddress
-    ld b, 0
-    sla c
-    add hl, bc
-    srl c
-    pop de
-
-    ld a, e
-    ld [hl+], a
-    ld a, d
-    ld [hl], a
-
-    jp .CheckVibratoAndSlide ; TODO: Make jr?
+    ret
 
 .CommandsVector
 ; TODO: Update this as things get implemented
     dw .Envelope        ; Envelope
     dw .Tempo           ; Tempo
-    dw .Placeholder     ; Table
+    dw .SetTable        ; Set Table
     dw .Placeholder     ; Slide
     dw .MasterVol       ; Master vol
     dw .Pan             ; Pan
@@ -489,14 +582,18 @@ UpdateChannel
     dw .Placeholder     ; Vibrato
     dw .Waveform        ; Waveform
     dw .WaveData        ; Waveform data
+    dw .InlineWaveData  ; Inline waveform data
     dw .Length          ; Length
     dw .Placeholder     ; Microtuning
-    dw .InlineWaveData  ; Inline waveform data
+    dw .Wait            ; Wait
+    dw .TableWait       ; Table wait
+    dw .Placeholder     ; Transpose
+    dw .TableTranspose  ; Table transpose
+    dw .KillNote        ; Kill note
     dw .Jump            ; Jump
     dw .Placeholder     ; Call
     dw .Placeholder     ; Ret
     dw .End             ; End
-    dw .Wait            ; Wait
 
 CalculateAddress
 ; TODO: Does this need to be a subroutine? Replace with 16-bit macro?

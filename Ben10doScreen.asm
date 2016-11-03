@@ -192,6 +192,7 @@ Animation:
 ; x offset in b
 ; y offset in c
     call WaitFrame
+    call WaitFrame ; Need to wait a second frame for palettes to be properly set
 
     ; TODO: Check starting and final positions!
 
