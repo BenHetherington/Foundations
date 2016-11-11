@@ -94,6 +94,16 @@ NOIFXLength: db
 
 ; TODO: Add pan backup
 
+; Transposition
+PU1MuTranspose: db
+PU1FXTranspose: db
+PU2MuTranspose: db
+PU2FXTranspose: db
+WAVMuTranspose: db
+WAVFXTranspose: db
+NOIMuTranspose: db
+NOIFXTranspose: db
+
 ; Table Pointers
 PU1MuTable: dw
 PU1FXTable: dw

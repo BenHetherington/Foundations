@@ -75,6 +75,9 @@ PlayMusic::
 .ResetTables
     MemClear PU1MuTable, 2 * 8
 
+.ResetTransposition
+    MemClear PU1MuTranspose, 2 * 8
+
 .ResetPan
 ; TODO: Also set backup pan
     ld a, $FF

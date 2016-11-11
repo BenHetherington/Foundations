@@ -1,6 +1,7 @@
 INCLUDE "Sound/Macros.inc"
 INCLUDE "lib/AddSub1.inc"
 INCLUDE "lib/Shift.inc"
+INCLUDE "lib/16-bitMacros.inc"
 INCLUDE "SubroutineMacros.inc"
 
 CalculateChannelAddress: MACRO
@@ -28,6 +29,21 @@ CalculateBackupAddress: MACRO
     sub a, l
     ld h, a
 ENDM
+
+CalculateAddress: MACRO
+; Calculates the current channel's address in hl
+; c = channel no. (as UpdateChannel)
+; Modifies hl, b, and a
+    ld hl, PU1MuAddress
+    ld b, 0
+    sla c
+    add hl, bc
+    srl c
+
+    ld a, [hl+] ; LSB
+    ld h, [hl]  ; MSB
+    ld l, a
+    ENDM
 
 INCLUDE "Sound/Variables.inc"
 
@@ -111,6 +127,7 @@ UpdateChannel
     dec [hl]
     jr nz, .CheckTable
 
+    CalculateAddress
     call .GetNextCommand
 
 .UpdateAddress
@@ -140,7 +157,7 @@ UpdateChannel
     or h ; Check if the MSB is 0
     jr z, .CheckVibratoAndSlide
 
-    call .GetNextCommandLoop
+    call .GetNextCommand
 
 .UpdateTableAddress
     push hl             ; TODO: Generalise this!
@@ -165,22 +182,23 @@ UpdateChannel
 
     ret
 
-
 .GetNextCommand
-; c = channel no. (as UpdateChannel)
-    call CalculateAddress
-
-.GetNextCommandLoop
 .CheckNoteCommand
+; c = channel no. (as UpdateChannel)
     ld a, [hl+]
     cp CommandByte
-    jp nc, .ProcessCommand ; TODO: Make jr?
+    jr nc, .ProcessCommand
 
 .NoteCommand
-    ; TODO: Transpose the note as necessary
+    push hl
+
+; Transpose the note as necessary
+    ld d, a
+    CalculateBackupAddress PU1MuTranspose
+    ld a, [hl]
+    add a, d
 
 ; Writing the note to the backup
-    push hl
     ld d, a
     CalculateBackupAddress PU1MuNoteBackup
     ld a, d
@@ -255,22 +273,23 @@ UpdateChannel
     jp .DoWait
 
 
+.InvalidCommand
+; Jumps here if an invalid command is found
+    rst $38 ; Use standard error lockup
+
+
 .ProcessCommand
 ; Deals with the non-note commands
     sla a
 
 ; Checking that an invalid character isn't used
     cp BiggestCommand
-    ret nc ; TODO: Decide what to do if an invalid command is found
+    jr nc, .InvalidCommand
 
     push hl
 
 ; Loading the address in the vector table
-    add a, .CommandsVector % $100
-    ld l, a
-    adc a, .CommandsVector / $100
-    sub a, l
-    ld h, a
+    AddTo16 hl, .CommandsVector
 
 ; Loading hl with the address to jump to
     ld a, [hl+]
@@ -332,13 +351,13 @@ UpdateChannel
     ld a, [hl+]
     ld [MuTempo], a
     ld [MuCounter], a
-    jp .GetNextCommandLoop
+    jp .GetNextCommand
 
 .FXTempo
     ld a, [hl+]
     ld [FXTempo], a
     ld [FXCounter], a
-    jp .GetNextCommandLoop
+    jp .GetNextCommand
 
 
 .SetTable
@@ -358,15 +377,30 @@ UpdateChannel
     ld [hl], d
 
     pop hl
-    jp .GetNextCommandLoop
+    jp .GetNextCommand
 
+
+.Call
+    pop de
+
+    sla c
+    CalculateBackupAddress PU1MuOriginalAddress
+    srl c
+
+    ld a, e
+    ld [hl+], a
+    ld [hl], d
+
+    ld16rr hl, de
+    jr .DoJump
 
 .Jump
     pop hl
+.DoJump
     ld a, [hl+]
     ld h, [hl]
     ld l, a
-    jp .GetNextCommandLoop
+    jp .GetNextCommand
 
 
 .Placeholder
@@ -409,6 +443,18 @@ UpdateChannel
     pop hl
     ld a, [hl+]
     ld [NR10], a
+    jp .CheckNoteCommand ; TODO: Make jr?
+
+.Transpose
+    pop hl
+    ld a, [hl+]
+    push hl
+
+    ld d, a
+    CalculateBackupAddress PU1MuTranspose
+    ld [hl], d
+
+    pop hl
     jp .CheckNoteCommand ; TODO: Make jr?
 
 .Waveform
@@ -554,6 +600,21 @@ UpdateChannel
 
     jp .CheckNoteCommand
 
+.Return
+    pop hl
+    sla c
+    CalculateBackupAddress PU1MuOriginalAddress
+    srl c
+
+    ld a, [hl+]
+    ld h, [hl]
+    ld l, a
+
+; Skip the original call's address bytes
+    inc hl
+    inc hl
+
+    jp .CheckNoteCommand
 
 .InlineWaveData
     pop hl
@@ -587,29 +648,13 @@ UpdateChannel
     dw .Placeholder     ; Microtuning
     dw .Wait            ; Wait
     dw .TableWait       ; Table wait
-    dw .Placeholder     ; Transpose
+    dw .Transpose       ; Transpose
     dw .TableTranspose  ; Table transpose
     dw .KillNote        ; Kill note
     dw .Jump            ; Jump
-    dw .Placeholder     ; Call
-    dw .Placeholder     ; Ret
+    dw .Call            ; Call
+    dw .Return          ; Ret
     dw .End             ; End
-
-CalculateAddress
-; TODO: Does this need to be a subroutine? Replace with 16-bit macro?
-; Returns with the address in hl
-; c = channel no. (as UpdateChannel)
-; Modifies hl, b, and a
-    ld hl, PU1MuAddress
-    ld b, 0
-    sla c
-    add hl, bc
-    srl c
-
-    ld a, [hl+] ; LSB
-    ld h, [hl]  ; MSB
-    ld l, a
-    ret
 
 WaveData:
     ; ID = $00; Sawtooth Wave (should probably change this from the default LSDJ one!)

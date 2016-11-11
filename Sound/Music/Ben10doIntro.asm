@@ -22,7 +22,7 @@ Ben10doIntroPU2::
     waveform 12.5
 
     note ___, 9
-    table Ben10doIntroPU2ArpTable
+    table .ArpTable
     note B_4, 30
     envelope $D7
 
@@ -30,7 +30,7 @@ Ben10doIntroPU2::
 
     soundend
 
-Ben10doIntroPU2ArpTable
+.ArpTable
     ttrans 0
     pan L_
     twait
@@ -55,7 +55,7 @@ Ben10doIntroPU2ArpTable
     pan _R
     twait
 
-    soundjp Ben10doIntroPU2ArpTable
+    soundjp .ArpTable
 
 Ben10doIntroWAV::
     vol 3

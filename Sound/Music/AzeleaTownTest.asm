@@ -12,7 +12,19 @@ AzeleaTownTestPU1::
     envelope $F1
     waveform 50
 
+    transpose 0
 REPT 2
+    soundcall .Phrase
+ENDR
+
+    transpose -2
+REPT 2
+    soundcall .Phrase
+ENDR
+
+    soundjp AzeleaTownTestPU1
+
+.Phrase
     note A_4, 2
     note D_5, 1
     note E_5, 2
@@ -23,20 +35,4 @@ REPT 2
     note G_5, 2
     note E_5, 1
     note D_5, 2
-ENDR
-
-
-REPT 2
-    note G_4, 2
-    note C_5, 1
-    note D_5, 2
-    note F_5, 1
-    note D_5, 2
-    note G_5, 2
-    note C_5, 1
-    note F_5, 2
-    note D_5, 1
-    note C_5, 2
-ENDR
-
-    soundjp AzeleaTownTestPU1
+    soundret
