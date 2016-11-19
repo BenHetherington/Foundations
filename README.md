@@ -16,3 +16,12 @@ Some of the implemented features so far include:
 
 ## Assembly
 First, if you haven't already done so, download and install [rgbds](https://github.com/bentley/rgbds), the assembler used by this project. Then, start up a Terminal, navigate to your cloned Foundations directory, then run `make`.
+
+## Copyrights
+This demo currently contains some temporary content, including the following:
+- The [Psyche-Lock music](Sound/Music/AzeleaTownTest.asm), © Capcom.
+- The [sample of Lucario's cry](Sound/Samples/Data/Luc.bin) and [Ethen's sprites](OverworldGameLoop.asm#L439), © Nintendo, Game Freak, Creatures Inc.
+
+Some code is adapted from other sources (e.g. libraries), and references or credits for these can usually be found in comments.
+
+**All other content, including music and graphics is © 2016 Ben10do.**
