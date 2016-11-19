@@ -204,6 +204,13 @@ UpdateChannel
     ld a, d
     ld [hl], a
 
+; Getting the frequency, if it's a non-noise channel
+    bit 1, c
+    jr z, .NotNoise
+    bit 2, c
+    jr nz, .IsNoise
+
+.NotNoise
     ld hl, FrequencyTable
 
     ld d, 0
@@ -212,7 +219,6 @@ UpdateChannel
     add hl, de
 
 ; Calculating the destination address
-; TODO: Sort out noise channel
     ld b, c
 
     CalculateChannelAddress NR13
@@ -220,13 +226,22 @@ UpdateChannel
 ; Putting the frequency into a and d
     ld a, [hl+]
     ld d, [hl]
+    jr .WriteLo
+
+.IsNoise
+    ld d, 0
+    ld e, a
+    ld b, c
+    CalculateChannelAddress NR13
+    ld a, e
+    ; fallthrough
 
 .WriteLo
     ld [$FF00+c], a
     inc c
     ld a, d
     ; set 6, a ; TODO: Set finite length only if necessary
-    jr c, .WriteHi ; TODO: Only skip if necessary
+    ;jr c, .WriteHi ; TODO: Only skip if necessary
 
 .TriggerNote
     set 7, a ; Restart sound
@@ -298,7 +313,6 @@ UpdateChannel
 
 ; Boing!
     jp [hl]
-    
 
 .Envelope
     ld d, c ; Backing up c
@@ -318,6 +332,11 @@ UpdateChannel
     pop hl
     jp .CheckNoteCommand
 
+.Noise
+; Plays a noise note (for $80-$FF)
+    pop hl
+    ld a, [hl+]
+    jp .NoteCommand
 
 .KillNote
 ; Stops the current note from playing
@@ -401,12 +420,6 @@ UpdateChannel
     ld h, [hl]
     ld l, a
     jp .GetNextCommand
-
-
-.Placeholder
-    ld b, b
-    pop hl
-    jp .CheckNoteCommand ; TODO: Make jr?
 
 .MasterVol
     pop hl
@@ -510,7 +523,6 @@ UpdateChannel
     jp .CheckNoteCommand ; TODO: Make jr?
 
 .Length
-    ld b, b
     pop hl
     ld a, [hl+]
 
@@ -632,25 +644,25 @@ UpdateChannel
     ret
 
 .CommandsVector
-; TODO: Update this as things get implemented
     dw .Envelope        ; Envelope
     dw .Tempo           ; Tempo
     dw .SetTable        ; Set Table
-    dw .Placeholder     ; Slide
+    dw .InvalidCommand  ; Slide
     dw .MasterVol       ; Master vol
     dw .Pan             ; Pan
     dw .Sweep           ; Sweep
-    dw .Placeholder     ; Vibrato
+    dw .InvalidCommand  ; Vibrato
     dw .Waveform        ; Waveform
     dw .WaveData        ; Waveform data
     dw .InlineWaveData  ; Inline waveform data
     dw .Length          ; Length
-    dw .Placeholder     ; Microtuning
+    dw .InvalidCommand  ; Microtuning
     dw .Wait            ; Wait
     dw .TableWait       ; Table wait
     dw .Transpose       ; Transpose
     dw .TableTranspose  ; Table transpose
     dw .KillNote        ; Kill note
+    dw .Noise           ; Noise
     dw .Jump            ; Jump
     dw .Call            ; Call
     dw .Return          ; Ret

@@ -67,7 +67,6 @@ Idea0906PU2::
     envelope $A8
     waveform 12.5
 
-; TODO: Call this over and over, but with transposition
 REPT 2
     transpose 0
     soundcall .Phrase1
@@ -137,7 +136,6 @@ Idea0906WAV::
     vol 3
     wavedata SawtoothWave
 
-; TODO: Call this over and over, but with transposition
 REPT 2
     transpose 0
     soundcall .Phrase1

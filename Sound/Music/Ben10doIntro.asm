@@ -77,5 +77,10 @@ Ben10doIntroWAV::
     soundend
 
 Ben10doIntroNOI::
-    ; TODO: Populate!
+    envelope $81
+    noise $79, 6
+    noise $57, 3
+
+    envelope $85
+    noise $90, 3
     soundend

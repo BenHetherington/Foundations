@@ -25,7 +25,7 @@
 ; soundend (stops the sound)
 
 ; Note equates
-___ EQU $FF ; Not really a note, but will silence the channel
+___ EQU $F00F ; Not really a note, but will silence the channel
 C_3 EQU $00
 C#3 EQU $01
 D_3 EQU $02
@@ -149,7 +149,7 @@ SawtoothWave EQU $00
 ; Command bytes
 ; (Numbers less than $80 are reserved for notes)
 CommandByte EQU $80
-BiggestCommand EQU $94
+BiggestCommand EQU $96
 
 EnvelopeByte EQU $80
 TempoByte EQU $81
@@ -169,12 +169,13 @@ TableWaitByte EQU $8E
 TransposeByte EQU $8F
 TableTransposeByte EQU $90
 KillNoteByte EQU $91
+NoiseByte EQU $92
 
 ; Organisational bytes
-SoundJPByte EQU $92
-SoundCallByte EQU $93
-SoundRetByte EQU $94
-SoundEndByte EQU $95
+SoundJPByte EQU $93
+SoundCallByte EQU $94
+SoundRetByte EQU $95
+SoundEndByte EQU $96
 
 ; Command macros
 
@@ -182,67 +183,77 @@ note: MACRO
 ; Plays note \1, and then wait for \2 ticks
 ; e.g. note C_3, 5
 ; Not to be used in tables
-    IF \1 != ___
-        db \1, \2
+    IF (\1) != ___
+        db (\1), (\2)
     ELSE
-        db KillNoteByte, \2
+        db KillNoteByte, (\2)
+    ENDC
+    ENDM
+
+noise: MACRO
+; Plays noise with shape \1, and then wait for \2 ticks
+; e.g. noise $FF, 3
+; Not to be used in tables
+    IF (\1 < CommandByte) || (\1 == ___)
+        note (\1), (\2)
+    ELSE
+        db NoiseByte, (\1), (\2)
     ENDC
     ENDM
 
 envelope: MACRO
 ; Use the given envelope (volume/attack/release)
-    db EnvelopeByte, \1
+    db EnvelopeByte, (\1)
     ENDM
 
 vol: MACRO
 ; Use the given volume for the WAV channel
     db EnvelopeByte
-    IF \1 < 0 || \1 > 3
+    IF (\1) < 0 || (\1) > 3
         WARN "vol macro must have an operand of 0-3."
     ENDC
 
-    IF \1 == 0
+    IF (\1) == 0
         db 0
     ELSE
-        db (4 - \1) << 5
+        db (4 - (\1)) << 5
     ENDC
     ENDM
 
 tempo: MACRO
 ; Set the music tempo to the given value
-    db TempoByte, \1
+    db TempoByte, (\1)
     ENDM
 
 table: MACRO
 ; Set the table to use for this channel (set to $0000 to revert)
     db SetTableByte
-    dw \1
+    dw (\1)
     ENDM
 
 slide: MACRO
 ; Begin to slide to new notes, with \1 speed
-    db SlideByte, \1
+    db SlideByte, (\1)
     ENDM
 
 mastervol: MACRO
 ; Set the master volume of the Game Boy
-    db MasterVolByte, \1
+    db MasterVolByte, (\1)
     ENDM
 
 pan: MACRO
 ; Pan the current sound channel left, right, neither, or centre
-; TODO: Can merge into one byte (2-bit)
-    db PanByte, \1
+    db PanByte, (\1)
     ENDM
 
 sweep: MACRO
 ; Start to sweep up/down from notes in PU1
-    db SweepByte, \1 ; Might not be implemented at first
+    db SweepByte, (\1)
     ENDM
 
 vibrato: MACRO
 ; Add a vibrato effect (with \1 intensity)
-    db VibratoByte, \1
+    db VibratoByte, (\1)
     ENDM
 
 waveform: MACRO
@@ -250,19 +261,19 @@ waveform: MACRO
 ; TODO: Can merge into one byte (2-bit)
     db WaveformByte
 
-    IF \1==12.5
+    IF (\1) == 12.5
         db %00000000
     ELSE
 
-        IF \1==25
+        IF (\1) == 25
             db %01000000
         ELSE
 
-            IF \1==50
+            IF (\1) == 50
                 db %10000000
             ELSE
 
-                IF \1==75
+                IF (\1) == 75
                     db %11000000
                 ELSE
 
@@ -276,7 +287,7 @@ waveform: MACRO
 
 wavedata: MACRO
 ; Set the wavedata to use for the WAV channel
-    db WaveDataByte, \1
+    db WaveDataByte, (\1)
     ENDM
 
 inlinewavedata: MACRO
@@ -285,7 +296,7 @@ inlinewavedata: MACRO
     db InlineWaveDataByte
 Position SET 1
 REPT 16
-    db \1
+    db (\1)
     SHIFT
 ENDR
     ENDM
@@ -297,8 +308,8 @@ length: MACRO
     IF !STRCMP("\1", "inf")
         db $FF
     ELSE
-        IF \1 < 64
-            db (63 - \1) ; Check that this conversion is correct
+        IF (\1) < 64
+            db (63 - (\1)) ; Check that this conversion is correct
         ELSE
             WARN "length must have an operand 63 or less, or inf."
         ENDC
@@ -307,13 +318,13 @@ length: MACRO
 
 microtune: MACRO
 ; Detune notes by \1
-    db MicrotuneByte, \1
+    db MicrotuneByte, (\1)
     ENDM
 
 wait: MACRO
 ; Wait for \1 ticks before continuing
 ; Not to be used in tables
-    db WaitByte, \1
+    db WaitByte, (\1)
     ENDM
 
 twait: MACRO
@@ -324,13 +335,13 @@ twait: MACRO
 
 transpose: MACRO
 ; Transpose future notes by \1 semitones
-    db TransposeByte, \1
+    db TransposeByte, (\1)
     ENDM
 
 ttrans: MACRO
 ; Transpose the last note by \1 semitones
 ; Designed for use in tables
-    db TableTransposeByte, \1
+    db TableTransposeByte, (\1)
     ENDM
 
 
@@ -339,14 +350,14 @@ ttrans: MACRO
 soundjp: MACRO
 ; Jump to a different part of the sound data
     db SoundJPByte
-    dw \1
+    dw (\1)
     ENDM
 
 soundcall: MACRO
 ; Call a reusable phrase
 ; Not to be used in tables
     db SoundCallByte
-    dw \1
+    dw (\1)
     ENDM
 
 soundret: MACRO
