@@ -44,7 +44,7 @@ JumpToOtherBankFunction::
 SECTION "SRAM Enable/Disable", ROM0
 EnableSRAM::
     ld a, $0A
-    ld [ResetDisallowed], a
+    ldh [ResetDisallowed], a
     ld [SRAMEnableLocation], a
     ret
 
@@ -52,7 +52,7 @@ EnableSRAM::
 DisableSRAM::
     xor a
     ld [SRAMEnableLocation], a
-    ld [ResetDisallowed], a
+    ldh [ResetDisallowed], a
     ret
 
 

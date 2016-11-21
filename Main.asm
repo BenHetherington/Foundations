@@ -61,7 +61,7 @@ Setup:
 GameStartup:
 ; This is the point where the game returns to on reset
     xor a
-    ld [ResetDisallowed], a
+    ldh [ResetDisallowed], a
 
 ; Set up stack
     ld sp, StackEnd - 1
@@ -267,6 +267,9 @@ GameStartup:
     jr .FillerHalt
 
 .SRAMBroken
+    ld a, 1
+    ldh [ResetDisallowed], a
+
     ld hl, LCDC
     res 4, [hl]
 
@@ -663,7 +666,7 @@ VBlankHandler::
     push hl
 
 .CheckReset
-    ld a, [ResetDisallowed]
+    ldh a, [ResetDisallowed]
     or a
     jr nz, .SetVBlankOccurredFlag
 
