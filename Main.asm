@@ -58,7 +58,7 @@ Setup:
 .OriginalGameBoy
     JumpToOtherBank IncompatibleGB
 
-GameStartup:
+GameStartup::
 ; This is the point where the game returns to on reset
     xor a
     ldh [ResetDisallowed], a
@@ -112,7 +112,7 @@ GameStartup:
 
     ld a, b
     or a
-    jp nz, .SRAMBroken
+    jp nz, SRAMBroken
 
 .MainBit
     ; ld b, b
@@ -125,13 +125,15 @@ GameStartup:
 
     CallToOtherBank ShowBen10doScreen
 
-    ld a, 3
-    call PlayMusic
-
     ld hl, LCDC
     res 4, [hl]
 
     MemClear OAMData, 160
+
+
+ATextBasedAdventure::
+    ld a, 3
+    call PlayMusic
 
     ; TODO: Remove
     call ShowTextBox
@@ -238,7 +240,7 @@ GameStartup:
     ld hl, FakeQuicksaveText
     call PrintString
     call BattleTextFadeIn
-    jr .FillerHalt
+    jr FillerHalt
 
 .AttemptingAnRPGTextBox
     ld c, 15
@@ -252,7 +254,7 @@ GameStartup:
 
     ld hl, BattleScreenPrompt
     call Prompt
-    jr .FillerHalt
+    jr FillerHalt
 
 ;    SwitchSpeed
     ;ld hl, FakeRPGText
@@ -261,12 +263,7 @@ GameStartup:
 ;    SwitchSpeed
     ; call BattleTextFadeIn
 
-
-.FillerHalt
-    halt
-    jr .FillerHalt
-
-.SRAMBroken
+SRAMBroken:
     ld a, 1
     ldh [ResetDisallowed], a
 
@@ -276,7 +273,11 @@ GameStartup:
     call ShowTextBox
     ld hl, FoolishFools
     call PrintString
-    jr .FillerHalt
+    ; fallthrough
+
+FillerHalt
+    halt
+    jr FillerHalt
 
 WipeSaveData:
     ld a, $01
@@ -355,21 +356,6 @@ FakeQuicksaveText:
 
 SomeKindaPrompt:
     db "Is this some kinda prompt?\\"
-
-GameOverEncouragement1:
-    db "Come on! ```_@_", 1, GreenColour, "_#1_You can do it!~\\"
-
-GameOverEncouragement2:
-    db "That didn't go so well...~\\"
-
-; TODO: Add another encouragement message?
-
-GameOverPrompt:
-    db "Give it another go?\\"
-
-GameOverQuit:
-    db "_PLAYER_ realised that it\n"
-    db "was just a bad dream.~\\" ; No EarthBound references here...
 
 EraseSaveDataConfirmation:
     db "Erase all save data?````\n"
@@ -905,3 +891,8 @@ HandleButtons::
     ld a, b
     ldh [ButtonsHeld], a
     ret
+
+
+PlayerName::
+; TODO: Move this into RAM
+    db "You\\"

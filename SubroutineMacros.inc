@@ -12,11 +12,13 @@ NR11  EQU $FF11 ; PU1 Length & Wave duty
 NR12  EQU $FF12 ; PU1 Envelope
 NR13  EQU $FF13 ; PU1 Freq low
 NR14  EQU $FF14 ; PU1 Freq high +
+NR22  EQU $FF17 ; PU2 Envelope
 NR23  EQU $FF18 ; PU2 Freq low
 NR30  EQU $FF1A ; WAV Sound on/off
 NR32  EQU $FF1C ; WAV Volume
 NR33  EQU $FF1D ; WAV Freq low
 NR34  EQU $FF1E ; WAV Freq high +
+NR42  EQU $FF21 ; NOI Envelope
 NR50  EQU $FF24 ; Sound Master Volume
 NR51  EQU $FF25 ; Sound Panning
 LCDC  EQU $FF40 ; LCD Control

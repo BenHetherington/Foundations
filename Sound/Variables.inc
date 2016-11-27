@@ -7,6 +7,9 @@ MuCounter: db
 FXTempo: db
 FXCounter: db
 
+FadeOut: db
+FadeOutCounter: db
+
 ; Waits - equivelent to length of note, decremented and
 PU1MuWait: db
 PU1FXWait: db

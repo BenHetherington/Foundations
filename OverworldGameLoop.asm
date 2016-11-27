@@ -144,7 +144,32 @@ CheckEncounter:
     call ShowTextBox
     ld hl, EncounterMessage
     call PrintString
-    jp CloseTextBox
+
+    ld hl, DidYouWinPrompt
+    call PrintString
+
+    ld hl, YesNoPrompt
+    call Prompt
+
+    push af
+    call CloseTextBox
+    pop af
+
+    or a
+    ret z
+
+    ld a, 2
+    call FadeSound
+
+    call FastFadeToWhite
+
+; Get rid of the sprites here
+    MemClear OAMData, 160
+    StartOAMDMA OAMData
+
+    ld c, 20
+    call WaitFrames
+    JumpToOtherBank ShowGameOverScreen
 
 
 PlaceholderMessage:
@@ -152,6 +177,9 @@ PlaceholderMessage:
 
 EncounterMessage:
     db "An insignificant\nbug appeared!~\\"
+
+DidYouWinPrompt:
+    db "Did you win the battle?\\"
 
 
 ; TODO: Refactor overworld character handling to somewhere else

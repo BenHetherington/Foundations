@@ -668,6 +668,35 @@ UpdateChannel
     dw .Return          ; Ret
     dw .End             ; End
 
+CheckFade:
+    ld a, [FadeOut]
+    or a
+    ret z
+
+.FadingOut
+    ld hl, FadeOutCounter
+    dec [hl]
+    ret nz
+
+.DecrementVolume
+    ld [hl], a
+    ld a, [NR50]
+    or a
+    jr z, .Finish
+
+    sub a, $11
+    ld [NR50], a
+    ret
+
+.Finish
+    ; a should be 0
+    ld [FadeOut], a
+    call PlayMusic
+    ret
+
 WaveData:
     ; ID = $00; Sawtooth Wave (should probably change this from the default LSDJ one!)
     db $8E,$CD,$CC,$BB,$AA,$A9,$99,$88,$87,$76,$66,$55,$54,$43,$32,$31
+
+    ; ID = $01; Open fifth (max = $D)
+    db $DD,$DD,$D7,$77,$00,$66,$66,$60,$77,$77,$DD,$DD,$60,$00,$00,$00

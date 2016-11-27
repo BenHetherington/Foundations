@@ -83,6 +83,16 @@ PlayMusic::
     ld a, $FF
     ld [NR51], a
 
+.SilenceChannels
+    xor a
+    ld [NR12], a
+    ld [NR22], a
+    ld [NR30], a
+    ld [NR42], a
+
+    ld a, $77
+    ld [NR50], a
+
 .CleanUp
     PopROMBank
     pop de
@@ -92,6 +102,11 @@ PlayMusic::
 
 PlaySFX::
 ; TODO: Start playing a sound effect
+    ret
+
+FadeSound::
+    ld [FadeOut], a
+    ld [FadeOutCounter], a
     ret
 
 SoundEngineUpdate::
@@ -110,5 +125,7 @@ CheckIfSFXIsActive
     jr nz, UpdateSFX
     
 FinishSoundEngineUpdate
+    call CheckFade
+
     PopROMBank
     ret

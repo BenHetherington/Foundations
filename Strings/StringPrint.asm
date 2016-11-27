@@ -330,7 +330,10 @@ ProcessSpecialCharacter
     pop hl
     ret
 
-.PlayerName ; ""
+.PlayerName ; "_PLAYER_"
+    ld hl, PlayerName
+    call PrintString
+
     pop hl
     jp PrintString
 

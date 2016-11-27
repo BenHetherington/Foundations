@@ -57,3 +57,12 @@ MusicPointers::
     dw Ben10doIntroPU2
     dw Ben10doIntroWAV
     dw Ben10doIntroNOI
+
+.GameOver
+    ; ID = 05
+    ; For the Game Over Screen
+    db BANK(GameOverPU1)
+    dw GameOverPU1
+    dw GameOverPU2
+    dw GameOverWAV
+    dw GameOverNOI

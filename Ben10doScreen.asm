@@ -114,6 +114,9 @@ ShowBen10doScreen::
     call DisableDoubleSpeed
 
 .CopyTiles
+    StartVRAMDMA BlankTiles, $8000, $10, 1
+    call WaitForVRAMDMAToFinish
+
     StartVRAMDMA Tiles, $8010, $2A0, 1
     call WaitForVRAMDMAToFinish
 

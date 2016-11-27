@@ -10,6 +10,7 @@ SECTION "Prompt Data", WRAMX
 SelectedOption: db ; The index of the currently selected option
 SelectedOptionLocation: dw ; The position in the map that the cursor currently occupies
 CursorTile: db ; The tile in which the cursor was printed.
+BackupPrintSettings: db ; The previous print settings, before we overwrote them
 
 OptionCount: db
 BButtonOption: db ; $FF = disable
@@ -156,6 +157,9 @@ InitPrompt:
 .SetPrintSettings
     SwitchWRAMBank BANK(PrintSettings)
 
+    ld a, [PrintSettings]
+    ld b, a
+
     ld a, %111 ; No beeps, fastest
     ld [PrintSettings], a
 
@@ -171,7 +175,10 @@ InitPrompt:
     ; fallthrough
 
 PrintOptions:
-    SwitchWRAMBank BANK(OptionCount)
+    SwitchWRAMBank BANK(BackupPrintSettings)
+    ld a, b
+    ld [BackupPrintSettings], a
+
     ld hl, OptionCount
     ld a, [hl+]
     ld b, a
@@ -253,6 +260,13 @@ PromptLoop:
     call ClearTextBox
     call SetDefaultTextColours
 
+    ld a, [BackupPrintSettings]
+    ld b, a
+    SwitchWRAMBank BANK(PrintSettings)
+    ld a, b
+    ld [PrintSettings], a
+
+    SwitchWRAMBank BANK(SelectedOption)
     ld a, [SelectedOption]
     ret
 

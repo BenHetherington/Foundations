@@ -145,6 +145,7 @@ __ EQU %00000000
 
 ; Wave equates (for use with wavedata)
 SawtoothWave EQU $00
+OpenFifthV14 EQU $01
 
 ; Command bytes
 ; (Numbers less than $80 are reserved for notes)

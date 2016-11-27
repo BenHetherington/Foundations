@@ -11,13 +11,15 @@
 		B5190BA61CFB53830004828D /* Interface.s */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.asm; path = Interface.s; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.asm.arm; };
 		B5190BA71CFB540A0004828D /* Variables.inc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.pascal; path = Variables.inc; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.asm.arm; };
 		B529FF7B1CDAB07A0044D8BB /* TempSong.asm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.asm.asm; path = TempSong.asm; sourceTree = "<group>"; };
+		B53CFDD01DE24D140006787B /* GameOver.asm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.asm.asm; path = GameOver.asm; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.asm.arm; };
 		B54332071CF4FF0400A8642C /* StringPrint.asm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.asm.asm; name = StringPrint.asm; path = Strings/StringPrint.asm; sourceTree = SOURCE_ROOT; xcLanguageSpecificationIdentifier = xcode.lang.asm.arm; };
 		B54332081CF4FF6900A8642C /* TextBox.asm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.asm.asm; path = TextBox.asm; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.asm.arm; };
+		B5440F661DE395B600BF5EC2 /* GameOverScreen.asm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.asm.asm; path = GameOverScreen.asm; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.asm.arm; };
 		B585234A1D1ECDA3009C9DC4 /* OverworldGameLoop.asm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.asm.asm; path = OverworldGameLoop.asm; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.asm.arm; };
 		B599ADC51C4182CE005C2B67 /* Main.asm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.asm.asm; path = Main.asm; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.asm.arm; };
 		B599ADC61C4182CE005C2B67 /* charmap.inc */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.pascal; path = charmap.inc; sourceTree = "<group>"; };
 		B599ADC71C4182CE005C2B67 /* Header.asm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.asm.asm; path = Header.asm; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.asm.arm; };
-		B599ADC81C4182CE005C2B67 /* IncompatibleGB.asm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.asm.asm; path = IncompatibleGB.asm; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.asm.ppc; };
+		B599ADC81C4182CE005C2B67 /* IncompatibleGB.asm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.asm.asm; path = IncompatibleGB.asm; sourceTree = "<group>"; };
 		B599ADCB1C4182CE005C2B67 /* AddSub1.inc */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.pascal; path = AddSub1.inc; sourceTree = "<group>"; };
 		B599ADCC1C4182CE005C2B67 /* Hardware.inc */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.pascal; path = Hardware.inc; sourceTree = "<group>"; };
 		B599ADCD1C4182CE005C2B67 /* Pucrunch.asm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.asm.asm; path = Pucrunch.asm; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.asm.arm; };
@@ -38,7 +40,7 @@
 		B5B74CC81D1AE8AC00188B7B /* Idea0906.asm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.asm.asm; path = Idea0906.asm; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.asm.arm; };
 		B5BE2CD31C6E3FC800A0F391 /* MusicPointers.asm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.asm.asm; path = MusicPointers.asm; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.asm.arm; };
 		B5BE2CD41C6E4C6C00A0F391 /* Subroutines.asm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.asm.asm; path = Subroutines.asm; sourceTree = "<group>"; };
-		B5D067F01D0717BD00D443A3 /* SamplePointers.asm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.asm.asm; path = SamplePointers.asm; sourceTree = "<group>"; };
+		B5D067F01D0717BD00D443A3 /* SamplePointers.asm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.asm.asm; path = SamplePointers.asm; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.asm.arm; };
 		B5D067F21D071E1800D443A3 /* Luc.bin */ = {isa = PBXFileReference; explicitFileType = compiled; path = Luc.bin; sourceTree = "<group>"; };
 		B5D067F41D071E9600D443A3 /* SampleData.asm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.asm.asm; name = SampleData.asm; path = Banks/SampleData.asm; sourceTree = "<group>"; };
 		B5D067F51D07676800D443A3 /* SamplePlayer.asm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.asm.asm; path = SamplePlayer.asm; sourceTree = "<group>"; };
@@ -66,6 +68,7 @@
 				B5AF65891CDD39F60076ADC2 /* AzeleaTownTest.asm */,
 				B59EE8221DC56038003670A7 /* Ben10doIntro.asm */,
 				B5B74CC81D1AE8AC00188B7B /* Idea0906.asm */,
+				B53CFDD01DE24D140006787B /* GameOver.asm */,
 			);
 			path = Music;
 			sourceTree = "<group>";
@@ -82,6 +85,7 @@
 				B5BE2CD41C6E4C6C00A0F391 /* Subroutines.asm */,
 				B599ADC71C4182CE005C2B67 /* Header.asm */,
 				B599ADC81C4182CE005C2B67 /* IncompatibleGB.asm */,
+				B5440F661DE395B600BF5EC2 /* GameOverScreen.asm */,
 				B599ADC91C4182CE005C2B67 /* lib */,
 				B599ADCF1C4182CE005C2B67 /* Sound */,
 				B54332061CF4FEC400A8642C /* Strings */,
