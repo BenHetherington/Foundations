@@ -223,7 +223,7 @@ ReplaceLastTile::
 
 FastFadeText::
 ; A more specialised version of the function that was once above it
-; Fades out the text
+; Fades out the text and the prompt cursor
     call WaitFrame
     ld d, 3 ; Outer counter
 .OuterLoop
@@ -266,6 +266,36 @@ FastFadeText::
 
     dec b
     jr nz, .BGPaletteLoop
+
+; Fade out the prompt cursor
+.SpritePalette
+    ld b, 63 | (1 << 7) ; Address (+ increment on write)
+    ld a, b
+    ld [OBPI], a
+    call EnsureVBlank
+    ld a, [OBPD]
+    ei
+    ld h, a
+
+    dec b
+    ld a, b
+    ld [OBPI], a
+    call EnsureVBlank
+    ld a, [OBPD]
+    ei
+    ld l, a
+
+; Manipulate the palette data
+    srl16 hl, 1
+    call EnsureVBlank
+    ld a, l
+    and %11100111
+    ld [OBPD], a
+
+    ld a, h
+    and %00011100
+    ld [OBPD], a
+    ei
 
     call WaitFrame
     call WaitFrame

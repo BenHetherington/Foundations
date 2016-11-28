@@ -169,9 +169,11 @@ InitPrompt:
     ld a, (2 * 2) + (8 * 7) + %10000000 ; Set text colour 2
     ld [BGPI], a
 
+    call EnsureVBlank
     xor a ; Black
     ld [BGPD], a
     ld [BGPD], a
+    ei
     ; fallthrough
 
 PrintOptions:
@@ -230,7 +232,7 @@ ShowPrompt:
 
     xor a
     call SetCursor
-    call BattleTextFadeIn
+    call PromptTextFadeIn
     ; fallthrough
 
 PromptLoop:

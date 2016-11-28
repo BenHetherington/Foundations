@@ -239,7 +239,7 @@ ATextBasedAdventure::
     call ShowTextBox
     ld hl, FakeQuicksaveText
     call PrintString
-    call BattleTextFadeIn
+    call PromptTextFadeIn ; TODO: Fade this to red, not blue
     jr FillerHalt
 
 .AttemptingAnRPGTextBox
@@ -261,7 +261,7 @@ ATextBasedAdventure::
     ld hl, FileOptionsTest
     call PrintString
 ;    SwitchSpeed
-    ; call BattleTextFadeIn
+    ; call PromptTextFadeIn
 
 SRAMBroken:
     ld a, 1
@@ -339,7 +339,7 @@ FileOptionsTest:
     db "^_right_^^", "Copy", "\t^^^_#3_ ", "Erase", "\t\t^Cancel\\"
 
 FakeQuicksaveText:
-    db "§", %111, "_@_", 1, $00, $00, "_@_", 2, $00, $00, "_#1_" ; Setting max speed, no SFX, black colours
+    db "§", %111, "_@_", 2, $00, $00, "_@_", 2, $00, $00, "_#2_" ; Setting max speed, no SFX, black colours
     ;db "Don't turn off\n"
     ;db "the power.\\"
     db "Don't remove the\n"
@@ -365,14 +365,7 @@ EraseSaveDataConfirmation:
 ; Fast Fade Functions
 ; TODO: Refactor these, since there's tonnes of code reuse!
 
-BattleTextFadeIn::
-; TODO: Redo this
-; Instead, have the colour fade to white, and then fade the selection to blue
-; This enables me to use one less colour, enabling me to use the 'other' spare
-; colour in the text above the selection
-; Also, don't make this battle-specific!
-; Plus, fade in the colour for the cursor.
-
+PromptTextFadeIn::
     ld c, $40 ; Colour
     ld b, 3 ; Counter
 .Loop
@@ -382,18 +375,20 @@ BattleTextFadeIn::
     ld a, (2 * 2) + (8 * 7) + %10000000
     ld [BGPI], a
 
+    ld a, (3 * 2) + (8 * 7) + %10000000
+    ld [OBPI], a
+
+    call EnsureVBlank
     xor a
     ld [BGPD], a
+    ld [OBPD], a
+    ei
+
+    call EnsureVBlank
     ld a, c
     ld [BGPD], a
-
-.White
-    ld a, (1 * 2) + (8 * 7) + %10000000
-    ld [BGPI], a
-
-    ld a, c
-    ld [BGPD], a
-    ld [BGPD], a
+    ld [OBPD], a
+    ei
 
     dec b
     ret z
@@ -604,7 +599,7 @@ FastFadeToWhite::
 
 ; Manipulate the palette data
     sla16 hl, 1
-    ld a, h
+    ld a, l
     bit 5, a
     jr z, .SpriteSkipOverflowR
 .SpriteOverflowR

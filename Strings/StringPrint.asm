@@ -309,10 +309,12 @@ ProcessSpecialCharacter
     sla a
     add a, (8 * 7) + %10000000
     ld [BGPI], a
+    call EnsureVBlank
     ld a, [hl+]
     ld [BGPD], a
     ld a, [hl+]
     ld [BGPD], a
+    ei
     jp PrintString
 
 .SetSettings
