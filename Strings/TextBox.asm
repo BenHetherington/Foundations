@@ -12,7 +12,6 @@ ShowTextBox::
     SwitchWRAMBank BANK(TextTilesPointer)
     xor a
     ld [PrintSettings], a
-    call EnsureVBlank
 
 .SetUpWindow
     ld hl, LCDC
@@ -34,6 +33,7 @@ ShowTextBox::
     ; TODO: Use DMA
     ld a, 1
     ld [VBK], a
+    ei
 
     ld hl, $9C00
     ld de, 12
@@ -43,6 +43,7 @@ ShowTextBox::
     call EnsureVBlank
     ld a, (7 | %1000) ; TODO: Write a description
     ld [hl+], a
+    ei
     dec c
     jr nz, .MapAttributesLoop
 
@@ -53,8 +54,7 @@ ShowTextBox::
     jr .SetTiles
 
 .SetMapLayout
-    call EnsureVBlank
-    ; TODO: Use DMA
+    ; TODO: Use DMA?
     xor a
     ld [VBK], a ; Use VRAM Bank 0
 
@@ -62,14 +62,20 @@ ShowTextBox::
     ld a, TileID + 1
     ld b, 5
     ld c, 18
-    ld de, 14
+    ld d, a
 .MapLayoutLoop
+    call EnsureVBlank
+    ld a, d
     ld [hl+], a
+    ei
     inc a
+    ld d, a
     dec c
     jr nz, .MapLayoutLoop
 
+    ld de, 14
     add hl, de
+    ld d, a
     ld c, 18
     dec b
     jr nz, .MapLayoutLoop
@@ -201,6 +207,7 @@ ReplaceLastTile::
     ld [hl+], a
     ld a, c
     ld [hl+], a
+    ei
     pop bc
     inc bc
     dec d
@@ -223,14 +230,14 @@ FastFadeText::
     ld b, 4 ; Number of colours to modify
     ld c, 56 ; Address
 .BGPaletteLoop
-    call EnsureVBlank
-
 ; Load the palette into hl
     inc c
     ld a, c
     ld [BGPI], a
 
+    call EnsureVBlank
     ld a, [BGPD]
+    ei
     ld h, a
 
     dec c
@@ -240,12 +247,14 @@ FastFadeText::
 
     set 7, a ; Increment after writing
     ld [BGPI], a
+    call EnsureVBlank
     ld a, [BGPD]
+    ei
     ld l, a
 
 ; Manipulate the palette data
-    call EnsureVBlank
     srl16 hl, 1
+    call EnsureVBlank
     ld a, l
     and %11100111
     ld [BGPD], a
@@ -253,6 +262,7 @@ FastFadeText::
     ld a, h
     and %00011100
     ld [BGPD], a
+    ei
 
     dec b
     jr nz, .BGPaletteLoop

@@ -211,6 +211,13 @@ MemClear: MACRO
     call MemClearRoutine
     ENDM
 
+VRAMClear: MACRO
+; \1 = destination, \2 = byte count
+    ld hl, \1
+    ld bc, \2
+    call VRAMClearRoutine
+    ENDM
+
 ; 16-bit Addition
 
 AddTo16: MACRO

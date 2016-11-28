@@ -186,6 +186,7 @@ DidYouWinPrompt:
 
 AddPlayerToScreen::
     call EnsureVBlank
+    ei
 
     xor a
     ld [VBK], a
@@ -255,8 +256,9 @@ AnimateMovement::
     call ConfigurePlayerSprite
     StartOAMDMA OAMData
 
-    call CheckVBlank
+    call EnsureVBlank
     StartVRAMDMA hl, $8000, 64, 0
+    ei
     ret
 
 
@@ -428,22 +430,17 @@ LoadMap::
     ld [SCY], a
     ld [SCX], a
 
-    call CheckVBlank
+    call EnsureVBlank
     StartVRAMDMA TempCaveTile, $9000, 16, 1
+    ei
     call WaitForVRAMDMAToFinish
 
-REPT 4
-    call CheckVBlank
-    MemClear $9800, 0
-ENDR
+    VRAMClear $9800, $400
 
     ld a, 1
     ld [VBK], a
 
-REPT 4
-    call CheckVBlank
-    MemClear $9800, 0
-ENDR
+    VRAMClear $9800, $400
 
     ld a, %10000000
     ld [BGPI], a

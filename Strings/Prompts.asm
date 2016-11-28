@@ -300,7 +300,6 @@ PrepareCursor:
 ; TODO: Refactor?
     ld de, $00FF
     call EnsureVBlank
-    di
     ld c, (OBPI & $FF)
 
     ld a, $3E | (%10000000)

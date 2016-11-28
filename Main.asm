@@ -414,14 +414,14 @@ FastFadeToBlack::
     ld b, 32 ; Number of colours to modify
     ld c, 0 ; Address
 .BGPaletteLoop
-    call EnsureVBlank
-
 ; Load the palette into hl
     inc c
     ld a, c
     ld [BGPI], a
 
+    call EnsureVBlank
     ld a, [BGPD]
+    ei
     ld h, a
 
     dec c
@@ -431,19 +431,24 @@ FastFadeToBlack::
 
     set 7, a ; Increment after writing
     ld [BGPI], a
+    call EnsureVBlank
     ld a, [BGPD]
+    ei
     ld l, a
 
 ; Manipulate the palette data
-    call EnsureVBlank
     srl16 hl, 1
+    call EnsureVBlank
     ld a, l
     and %11101111
     ld [BGPD], a
+    ei
 
+    call EnsureVBlank
     ld a, h
     and %00111101
     ld [BGPD], a
+    ei
 
     dec b
     jr nz, .BGPaletteLoop
@@ -451,8 +456,6 @@ FastFadeToBlack::
 .SpritePalettes
     ld b, 32
 .SpritePaletteLoop
-    call EnsureVBlank
-
 ; Load the palette into hl
     ld c, b
     sla c
@@ -460,27 +463,33 @@ FastFadeToBlack::
     ld a, c
     ld [OBPI], a
 
+    call EnsureVBlank
     ld a, [OBPD]
+    ei
     ld h, a
 
     dec c
     ld a, c
     set 7, a ; Increment after writing
     ld [OBPI], a
+    call EnsureVBlank
     ld a, [OBPD]
+    ei
     ld l, a
 
 ; Manipulate the palette data
-    call EnsureVBlank
-
     srl16 hl, 1
+    call EnsureVBlank
     ld a, l
     and %11101111
     ld [OBPD], a
+    ei
 
+    call EnsureVBlank
     ld a, h
     and %00111101
     ld [OBPD], a
+    ei
 
     dec b
     jr nz, .SpritePaletteLoop
@@ -503,6 +512,7 @@ FastFadeToWhite::
     ld [BGPI], a
     call EnsureVBlank
     ld a, [BGPD]
+    ei
     ld h, a
 
     dec c
@@ -514,10 +524,10 @@ FastFadeToWhite::
     ld [BGPI], a
     call EnsureVBlank
     ld a, [BGPD]
+    ei
     ld l, a
 
 ; Manipulate the palette data
-    call EnsureVBlank
     sla16 hl, 1
     ld a, l
     bit 5, a
@@ -531,6 +541,7 @@ FastFadeToWhite::
     call EnsureVBlank
     ld a, e
     ld [BGPD], a
+    ei
 
     ld a, h
     bit 2, a
@@ -551,6 +562,7 @@ FastFadeToWhite::
     call EnsureVBlank
     ld a, e
     ld [BGPD], a
+    ei
 
     dec b
     jr nz, .BGPaletteLoop
@@ -558,15 +570,13 @@ FastFadeToWhite::
 .SpritePalettes
     ld b, 32
 .SpritePaletteLoop
-    call EnsureVBlank
-
 ; Load the palette into hl
     ld c, b
     sla c
     dec c
     ld a, c
 
-    and %110
+    and a, %110
     jr nz, .ContinueLoadingColour
 
 .SkipUnusedColour
@@ -580,6 +590,7 @@ FastFadeToWhite::
     ld [OBPI], a
     call EnsureVBlank
     ld a, [OBPD]
+    ei
     ld h, a
 
     dec c
@@ -588,10 +599,10 @@ FastFadeToWhite::
     ld [OBPI], a
     call EnsureVBlank
     ld a, [OBPD]
+    ei
     ld l, a
 
 ; Manipulate the palette data
-    call EnsureVBlank
     sla16 hl, 1
     ld a, h
     bit 5, a
@@ -611,8 +622,8 @@ FastFadeToWhite::
     call EnsureVBlank
     ld a, e
     ld [OBPD], a
+    ei
 
-    call EnsureVBlank
     ld a, h
     bit 2, a
     jr z, .SpriteSkipOverflowG
@@ -632,6 +643,7 @@ FastFadeToWhite::
     call EnsureVBlank
     ld a, e
     ld [OBPD], a
+    ei
 
     dec b
     jr nz, .SpritePaletteLoop

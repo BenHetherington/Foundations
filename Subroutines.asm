@@ -142,10 +142,12 @@ WaitFrames::
     ret
 
 EnsureVBlank::
+    di
+.Wait
     ld a, [STAT]
     bit 1, a
     ret z
-    jr EnsureVBlank
+    jr .Wait
 
 ;EnsureVBlank:
 ;; Returns immediately if in V-Blank, else returns once we're in it.
@@ -365,6 +367,7 @@ MemCopyFixedDestRoutine::
     call EnsureVBlank
     ld a, [hl+]
     ld [$FF00+c], a
+    ei
 
     dec b
     jr nz, .Loop
@@ -375,6 +378,15 @@ MemClearRoutine::
 .Loop
     ld [hl+], a
     dec b
+    jr nz, .Loop
+    ret
+
+VRAMClearRoutine::
+.Loop
+    call EnsureVBlank
+    xor a
+    ld [hl+], a
+    dec bc
     jr nz, .Loop
     ret
 

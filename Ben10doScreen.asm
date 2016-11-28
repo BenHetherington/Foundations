@@ -126,6 +126,7 @@ ShowBen10doScreen::
 
 .TweakMap
     call EnsureVBlank
+    ei
     ld hl, $9907
     xor a
     ld [hl+], a

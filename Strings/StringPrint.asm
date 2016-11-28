@@ -438,7 +438,6 @@ PutChar:
 
 .FirstByte
     call EnsureVBlank
-    di
     ld a, [hl]
     or a, b
     ld [hl], a
@@ -451,7 +450,6 @@ PutChar:
 
 .SecondByte
     call EnsureVBlank
-    di
     ld a, [hl]
     or a, c
     ld [hl], a
@@ -769,6 +767,7 @@ SetDefaultTextColours::
     call EnsureVBlank
     ld a, b
     ld [BGPD], a
+    ei
     dec c
     jr nz, .PaletteLoop
 

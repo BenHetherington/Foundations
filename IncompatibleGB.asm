@@ -66,6 +66,7 @@ IncompatibleGBPrint
     ld c, 18
     dec b
     jr nz, .MapLayoutLoop
+    ei
 
 
 IncompatibleGBSlideIn
