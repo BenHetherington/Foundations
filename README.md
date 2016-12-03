@@ -8,8 +8,8 @@ Some of the implemented features so far include:
 - A [sound engine](Sound/). Still WIP, but includes features like LSDJ-style tables.
 - [Sample playback](Sound/Samples/), including the [Antispike technique](http://blog.gg8.se/wordpress/2013/02/11/gameboy-project-week-6-can-i-have-an-a-men/) for GBAs.
 - A [fixed version](https://github.com/mist64/pucrunch/pull/1) of the [Pucrunch decompressor](lib/Pucrunch.asm).
-- Basic support for showing a [gradient](Main.asm#L743-L792).
-- An implementation of the [xorshift PRNG](Subroutines.asm#L185-L232).
+- Basic support for showing a [gradient](Interrupts.asm##L167-L216).
+- An implementation of the [xorshift PRNG](Subroutines.asm#L187-L234).
 - A [basic demo of an overworld](OverworldGameLoop.asm), allowing movement in eight directions. It's in an endless empty map, but still!
 
 *I've been trying to figure out best practices as I go, so apologies if some of the code is more spaghetti-y than I'd like, especially in older areas.*
