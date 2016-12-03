@@ -49,9 +49,7 @@ VBlankInterrupt:
 	
 SECTION	"LCD IRQ Vector", ROM0[$48]
 LCDInterrupt:
-; Is only called for H-Blanks
-; Not got anything to do just yet
-	jp HBlankHandler
+	jp LCDStatDIH
 
 SECTION	"Timer IRQ Vector", ROM0[$50]
 TimerInterrupt:

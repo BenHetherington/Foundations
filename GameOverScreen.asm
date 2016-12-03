@@ -4,7 +4,7 @@ INCLUDE "Strings/charmap.inc"
 
 SECTION "Game Over Screen", ROMX
 
-Gradient:
+GameOverGradient:
 .Whiteness
     dw $7FFF,$7FFF,$7FFF,$7FFF,$7FFF,$7FFF,$7FFF,$7FFF,$7FFF
     dw $7FFF,$7FFF,$7FFF,$7FFF,$7FFF,$7FFF,$7FFF,$7FFF,$7FFF
@@ -34,6 +34,10 @@ QuitText:
     db "_PLAYER_ realised that it\n"
     db "was just a bad dream.~\\" ; No EarthBound references here...
 
+GradientEnableStart:
+    ; TODO: Move this somewhere sensible
+    jp Gradient
+GradientEnableEnd:
 
 ShowGameOverScreen::
     ld c, 5
@@ -62,9 +66,11 @@ ShowGameOverScreen::
     call WaitForVRAMDMAToFinish
 
 ; Copy the initial gradient data
-    MemCopy Gradient, GradientData, 18 * 2
+    MemCopy GameOverGradient, GradientData, 18 * 2
 
 ; Enable gradients; change if this is refactored later
+    MemCopy GradientEnableStart, LCDStatDIH, GradientEnableEnd - GradientEnableStart
+
     ld hl, STAT
     set 3, [hl]
 
@@ -72,7 +78,7 @@ ShowGameOverScreen::
     set 1, [hl]
 
 ; Animate the gradient
-    ld hl, Gradient
+    ld hl, GameOverGradient
     ld c, 36
 
 .AnimateGradientIn
@@ -134,6 +140,9 @@ Continue:
     ld hl, IE
     res 1, [hl]
 
+    ld a, $D9 ; reti
+    ld [LCDStatDIH], a
+
     ld c, 15
     call WaitFrames
 
@@ -172,9 +181,11 @@ Quit:
     ld hl, IE
     res 1, [hl]
 
+    ld a, $D9 ; reti
+    ld [LCDStatDIH], a
+
     ld c, 45
     call WaitFrames
 
     call FastFadeToWhite
     JumpToOtherBank GameStartup
-

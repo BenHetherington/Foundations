@@ -39,6 +39,7 @@ SECTION "Setup", ROMX
 Setup:
 ; b contains the GBA status bit
 ; c contains the GBC status byte
+    di
     ld a, c
     cp $11
     jp nz, .OriginalGameBoy
@@ -79,6 +80,7 @@ GameStartup::
     ld a, %00000001 ; [No Timer], [No LYC (LCD STAT)], V-Blank
     ld [IE], a      ; TODO: Add serial to this to add link capablilities?
 
+    call ResetInterruptHandlers
     call InitSoundEngine
 
 ; Start the temporary animation frame counter
@@ -364,6 +366,7 @@ EraseSaveDataConfirmation:
 
 ; Fast Fade Functions
 ; TODO: Refactor these, since there's tonnes of code reuse!
+SECTION "Fast Fade Functions", ROM0
 
 PromptTextFadeIn::
     ld c, $40 ; Colour
@@ -652,46 +655,8 @@ FastFadeToWhite::
 
 SECTION "Temp Anim", ROM0
 
-VBlankHandler::
-    push af ; Push everything
-    push bc
-    push de
-    push hl
-
-.CheckReset
-    ldh a, [ResetDisallowed]
-    or a
-    jr nz, .SetVBlankOccurredFlag
-
-    ld a, %11011111 ; Set buttons; need to reset them to what they were before!
-    ld [JOYP], a
-
-    ld a, [JOYP]
-    and a, %00001111
-    jr nz, .SetVBlankOccurredFlag
-
-.Reset
-    SwitchROMBank BANK(GameStartup)
-    jp GameStartup
-
-.SetVBlankOccurredFlag
-    xor a
-    ldh [VBlankOccurred], a
-
-    call HandleButtons
-    call SoundEngineUpdate
-
-.Anim
-    call TempAnim
-
-    pop hl ; Pop everything
-    pop de
-    pop bc
-    pop af
-    reti
-
-
-TempAnim:
+; TODO: Move this somewhere sensible!
+TempAnim::
     ld a, [TempAnimWait]
     or a
     ret z
@@ -735,57 +700,7 @@ TempAnim:
 .Next
     ld [TempAnimFrame], a
     jp ReplaceLastTile
-
-HBlankHandler::
-    push af
-
-    ld a, [STAT]
-    bit 1, a
-    jr nz, .SetUpHBlankInterrupt
-
-    push bc
-
-    ld a, [LY]
-    ld b, a ; Save LY for later on
-    rrca
-    rrca
-    and a, %00111110
-
-    add a, GradientData & $FF
-    ld c, a
-
-    ld a, %10000000
-    ld [BGPI], a
-
-    ld a, [$FF00+c]
-    ld [BGPD], a
-
-    inc c
-    ld a, [$FF00+c]
-    ld [BGPD], a
-
-    ld a, b
-    add a, 8
-    cp $90
-    jr c, .Continue
-
-.Overflow
-    xor a
-
-.Continue
-    ld [LYC], a
-
-    ld a, %01000000
-    ld [STAT], a
-    pop bc
-    pop af
-    reti
-
-.SetUpHBlankInterrupt
-    ld a, %00001000
-    ld [STAT], a
-    pop af
-    reti
+    
 
 SECTION "VerifyChecksums", ROM0
 
@@ -866,37 +781,6 @@ VerifyChecksum:
     PopROMBank
     call DisableDoubleSpeed
     ld a, b
-    ret
-
-
-HandleButtons::
-    ld c, (JOYP & $FF)
-    ld a, %11011111 ; Select buttons
-    ld [$FF00+c], a
-
-    ld a, [$FF00+c]
-    cpl
-    and a, %00001111
-    ld b, a
-
-    ld a, %11101111 ; Select directions
-    ld [$FF00+c], a
-
-    ld a, [$FF00+c]
-    cpl
-    and a, %00001111
-    swap a
-    or a, b
-
-    ld b, a
-    ldh a, [ButtonsHeld]
-
-    xor a, b
-    and a, b
-
-    ldh [ButtonsPressed], a
-    ld a, b
-    ldh [ButtonsHeld], a
     ret
 
 

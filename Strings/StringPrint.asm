@@ -368,6 +368,9 @@ Wait
     xor a
     ld [TempAnimFrame], a
 
+    ld de, TempAnim
+    call PushVBlankHandler
+
 .Loop
     call WaitFrame
 
@@ -381,6 +384,7 @@ Wait
     jr z, .Loop
 
 .Continue
+    call PopVBlankHandler
     xor a
     ld [TempAnimWait], a
 
