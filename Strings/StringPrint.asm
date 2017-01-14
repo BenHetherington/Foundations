@@ -1,12 +1,13 @@
 INCLUDE "SubroutineMacros.inc"
 INCLUDE "lib/16-bitMacros.inc"
+INCLUDE "lib/AddSub1.inc"
 INCLUDE "lib/Shift.inc"
 INCLUDE "Strings/charmap.inc"
 INCLUDE "Strings/StringMacros.inc"
 
 IMPORT PlayTextBeep
 
-SECTION "Text Box Variables", WRAMX
+SECTION "Text Variables", WRAMX
 ; Current position, for knowing where to put the next character.
 TextTilesPointer:: dw         ; The address of the tile to start at.
                               ; Stored big-endian (just because)
@@ -19,6 +20,7 @@ TextTilesWorkSpace:: ds 8 * 4 ; Work space for creating the tiles.
 TextColour:: db               ; The current text colour.
 PrintSettings:: db            ; 0000 0bss: - ss = 00 for normal, 01 for faster, 11 for fastest.
                               ;            - b = 0 for beeps, 1 for no beeps (SFX)
+TextLineLength:: dw           ; The number of tiles between new lines.
                               ; Remaining bits are yet to be decided (but are currently unused)
 StringBuffer:: ds $10         ; A buffer to contain strings generated from integers, etc.
 
@@ -153,6 +155,9 @@ LetterWidths
 
 ClearTextBox::
 ; Clears all of the text box tiles.
+    ld a, 1
+    ld [VBK], a
+
     StartVRAMDMA BlankTiles, TilesPosition, $5B0, 1
     call WaitForVRAMDMAToFinish
     ; fallthrough
@@ -173,6 +178,11 @@ SetPrintVariables::
 
     ld a, $03
     ld [TextColour], a
+
+    ld a, 1
+    ld [TextLineLength + 1], a
+    xor a
+    ld [TextLineLength], a
 
     ret
 
@@ -395,7 +405,7 @@ Wait
     ret
 
 
-PutChar:
+PutChar::
 ; Assumes that the character to put is in a
 ; Does not handle special values (e.g. for spaces)
     push af
@@ -475,8 +485,7 @@ PutChar:
     jr z, .UpdateTextPositions
     push de
 
-    ld bc, $100
-    add hl, bc ; Updating the tiles below.
+    add16 hl, TextLineLength ; Updating the tiles below.
     ld bc, TextTilesWorkSpace + (2 * 8)
 
     ld a, [TextColour]
