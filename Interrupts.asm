@@ -30,7 +30,7 @@ PopVBlankHandler::
     ld a, [hl]
 
     ld b, a
-    sla a
+    add a, a
     add a, b ; Multiply a by 3
 
     jr c, .Zero
@@ -63,7 +63,7 @@ PushVBlankHandler::
 
 .AmendExisitingHandler
     ld b, a
-    sla a
+    add a, a
     add a, b ; Multiply a by 3
 
     AddTo16 hl, VBlankDIH
@@ -77,7 +77,7 @@ PushVBlankHandler::
     ld a, [hl]
 
     ld b, a
-    sla a
+    add a, a
     add a, b ; Multiply a by 3
 
     AddTo16 hl, VBlankDIH
@@ -174,10 +174,10 @@ Gradient::
     push bc
 
     ld a, [LY]
+    and a, %11111000
     ld b, a ; Save LY for later on
     rrca
     rrca
-    and a, %00111110
 
     add a, GradientData & $FF
     ld c, a

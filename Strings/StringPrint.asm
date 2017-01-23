@@ -221,7 +221,7 @@ PrintString::
 
 ProcessSpecialCharacter
 ; Deals with the special characters
-    sla a
+    add a, a
 
 ; Checking that an invalid character isn't used
     cp BiggestSpecialCharacter
@@ -316,7 +316,7 @@ ProcessSpecialCharacter
 .SetPalette
     pop hl
     ld a, [hl+]
-    sla a
+    add a, a
     add a, (8 * 7) + %10000000
     ld [BGPI], a
     call EnsureVBlank

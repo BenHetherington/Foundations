@@ -9,7 +9,7 @@ CalculateChannelAddress: MACRO
 ; The result will be in a. This *will* modify c, so back it up beforehand!
     ld a, c
 ; Multiply by 5
-    rlca
+    add a, a
     srl c
     add a, c
 
@@ -295,7 +295,7 @@ UpdateChannel
 
 .ProcessCommand
 ; Deals with the non-note commands
-    sla a
+    add a, a
 
 ; Checking that an invalid character isn't used
     cp BiggestCommand
@@ -439,7 +439,7 @@ UpdateChannel
 
 .PanLoop
     rlc e
-    rlca
+    add a, a
     dec d
     jr nz, .PanLoop
 

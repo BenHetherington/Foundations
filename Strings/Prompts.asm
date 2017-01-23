@@ -333,9 +333,9 @@ MoveCursor:
     ld a, [SelectedOption]
 
 ; Get pointer to options data (TODO: Refactor!)
-    sla a
+    add a, a
     ld b, a
-    sla a
+    add a, a
     add a, b
 
     ld hl, Option0Data
@@ -396,9 +396,9 @@ MoveCursor:
 ; Call with the desired option to point at in a.
 SetCursor:
 ; Get pointer to options data (TODO: Refactor!)
-    sla a
+    add a, a
     ld b, a
-    sla a
+    add a, a
     add a, b
 
     ld hl, Option0Data
@@ -527,10 +527,9 @@ GetSpriteCoordinates:
 
 .Continue
     ld a, [hl+]
-    rlca
-    rlca
-    rlca
-    and a, %11111000
+    add a, a
+    add a, a
+    add a, a
 
     add a, 8 + 2
     ld e, a

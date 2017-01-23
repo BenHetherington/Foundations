@@ -99,7 +99,7 @@ HandleOverworldController:
     ld [PlayerAnimationDiagonalFrameSkip], a
     ld a, b
 
-    sla a
+    add a, a
     ld hl, .IncrementData
     AddTo16 hl, a
 
@@ -297,7 +297,7 @@ ConfigurePlayerSprite:
 
 GetNewFrame:
     ld a, [hl]
-    sla a
+    add a, a
 ; Loading the address in the vector table
     AddTo16 hl, .DirectionsVector
 

@@ -76,7 +76,7 @@ EnableDoubleSpeed::
     cpl
     inc a
 
-    sla a
+    add a, a
     cpl
     inc a
 
