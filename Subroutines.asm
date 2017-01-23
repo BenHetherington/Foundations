@@ -234,11 +234,30 @@ SeedRNG::
     ret
 
 
-Rand:
-; Generates a random number between 0-c.
-; TODO: Write
-    call Xorshift
-    dec a
+RandLimit::
+; Generates a random number between 0 and c-1.
+; If a power of two is needed, just use Random directly, then AND the desired bits.
+; This subroutine will repeatedly call Random if necessary to avoid modulo bias.
+; It'll also cause an infinite loop if c = 0!
+    push de
+    push bc
+    ld d, 255
+    ld e, c
+    call Divide
+
+    cpl ; a = 255 - (255 % c)
+    ld d, a
+.Loop
+    call Random
+    cp d
+    jr nc, .Loop
+
+    ld d, a
+    ld e, c
+    call Divide
+
+    pop bc
+    pop de
     ret
 
 
@@ -330,6 +349,25 @@ SmallMultiply::
     ; TODO: Handle overflow
 
     dec c
+    jr nz, .Loop
+    ret
+
+Divide::
+; Divides two 8-bit numbers (d / e), returning the quotient (d) and remainder (a).
+; Destroys the b register in the process.
+; Based on: http://wikiti.brandonw.net/index.php?title=Z80_Routines:Math:Division
+    xor	a
+    ld b, 8
+.Loop
+    sla d
+    rla
+    cp e
+    jr c, .SkipCarry
+
+    sub e
+    inc d
+.SkipCarry
+    dec b
     jr nz, .Loop
     ret
 
