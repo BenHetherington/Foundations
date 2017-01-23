@@ -411,10 +411,50 @@ MemCopyFixedDestRoutine::
     jr nz, .Loop
     ret
 
+VRAMCopyRoutine::
+; Copies a region of VRAM. Adpated from Jeff Frohwein's memory.asm
+; hl = source, de = destination, bc = byte count
+.loop
+    call EnsureVBlank
+    ld a,[hl+]
+	ld [de],a
+    ei
+	inc de
+
+.skip
+    dec c
+	jr nz, .loop
+	dec b
+	jr nz, .loop
+	ret
+
+SmallVRAMCopyRoutine::
+; hl = source, de = destination, b = byte count
+.Loop
+    call EnsureVBlank
+    ld a, [hl+]
+    ld [de], a
+    ei
+    inc de
+
+    dec b
+    jr nz, .Loop
+    ret
+
 MemClearRoutine::
     xor a
 .Loop
     ld [hl+], a
+    dec b
+    jr nz, .Loop
+    ret
+
+SmallVRAMSetRoutine::
+.Loop
+    call EnsureVBlank
+    ld a, d
+    ld [hl+], a
+    ei
     dec b
     jr nz, .Loop
     ret
@@ -424,6 +464,7 @@ VRAMClearRoutine::
     call EnsureVBlank
     xor a
     ld [hl+], a
+    ei
     dec bc
     jr nz, .Loop
     ret

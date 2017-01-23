@@ -185,13 +185,34 @@ IF \3 == 0
 ENDC
 
 IF \3 > $FF
-    ld bc, \3
+    ld bc, \3 + $0101
     call MemCopyRoutine
 ENDC
 
 IF \3 < $100
     ld b, \3
     call SmallMemCopyRoutine
+ENDC
+    ENDM
+
+VRAMCopy: MACRO
+; A wrapper for the MemCopyRoutine
+; \1 = source, \2 = destination, \3 = byte count
+    ld hl, \1
+    ld de, \2
+
+IF \3 == 0
+    WARN "Invalid parameter: Bytes must be greater than 0."
+ENDC
+
+IF \3 > $FF
+    ld bc, \3 + $0101
+    call VRAMCopyRoutine
+ENDC
+
+IF \3 < $100
+    ld b, \3
+    call SmallVRAMCopyRoutine
 ENDC
     ENDM
 
