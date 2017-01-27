@@ -1,21 +1,23 @@
 InitSoundEngine::
-    ; TODO: Replace with generic memory-clearing function?
-
-    xor a
-    ld b, SoundVariableBytes
-    ld hl, MuTempo
-.Loop
-    ld [hl+], a
-    dec b
-    jr nz, .Loop
+    MemClear StartSoundVars, SoundVariableBytes
+    ld a, 8
+    ld [FadeOutCounter + 1], a
 
     ; TODO: Reset the sound hardware!
 
+    ld a, %110
+    ld [TAC], a ; 128kHz / 128 = Fires at 512Hz
+
+    ld a, $80
+    ld [TMA], a
+
     xor a
+    ld [TIMA], a
     ; fallthrough
 
 PlayMusic::
 ; Assume that a contains the song to be played
+    di
     push hl
     push bc
     push de
@@ -98,7 +100,7 @@ PlayMusic::
     pop de
     pop bc
     pop hl
-    ret
+    reti
 
 PlaySFX::
 ; TODO: Start playing a sound effect
@@ -110,8 +112,11 @@ FadeSound::
     ret
 
 SoundEngineUpdate::
-; Updates the music and FX into the next frame.
-; Assume that all registers are destroyed after the call.
+; Updates the music and FX for the next tick.
+    push af
+    push hl
+    push bc
+    push de
     PushROMBank
 
 CheckIfMusicIsActive
@@ -128,4 +133,8 @@ FinishSoundEngineUpdate
     call CheckFade
 
     PopROMBank
-    ret
+    pop de
+    pop bc
+    pop hl
+    pop af
+    reti

@@ -6,48 +6,48 @@ SECTION "TempSong", ROMX
 
 TempSong::
     envelope $F8
-    tempo 16
+    tempo 136
     waveform 50
     length 8
-    note C_4, 2
+    note C_4, 4
     length 8
-    note E_4, 2
+    note E_4, 4
     length 8
-    note B_4, 3
+    note B_4, 6
     length 8
-    note D_5, 1
+    note D_5, 2
     length 8
-    note C_5, 2
+    note C_5, 4
     length 8
-    note E_5, 2
+    note E_5, 4
     length 8
-    note B_5, 3
+    note B_5, 6
     length 8
-    note D_6, 1
+    note D_6, 2
     soundjp TempSong
 
 TempSongPU2::
     envelope $F1
     waveform 25
     pan _R
-    note G_3, 2
-    note C_4, 2
+    note G_3, 4
+    note C_4, 4
     pan L_
-    note E_4, 3
-    note B_4, 1
+    note E_4, 6
+    note B_4, 2
     pan _R
-    note D_5, 2
-    note C_5, 2
+    note D_5, 4
+    note C_5, 4
     pan L_
-    note E_5, 3
-    note B_5, 1
+    note E_5, 6
+    note B_5, 2
     soundjp TempSongPU2
 
 TempSongWAV::
     vol 3
     wavedata $00
     pan L_
-    note C_4, 8
+    note C_4, 16
     pan _R
-    note G_3, 8
+    note G_3, 16
     soundjp TempSongWAV

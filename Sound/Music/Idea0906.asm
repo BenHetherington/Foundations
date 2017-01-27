@@ -3,7 +3,7 @@ INCLUDE "Sound/Macros.inc"
 SECTION "Idea 09/06", ROMX
 
 Idea0906PU1::
-    tempo $02
+    tempo 34
     envelope $A8
     waveform 12.5
 

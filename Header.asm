@@ -53,7 +53,8 @@ LCDInterrupt:
 
 SECTION	"Timer IRQ Vector", ROM0[$50]
 TimerInterrupt:
-	jp SampleUpdate
+    jp SoundEngineUpdate
+	; jp SampleUpdate
 
 SECTION	"Serial IRQ Vector", ROM0[$58]
 SerialInterrupt:

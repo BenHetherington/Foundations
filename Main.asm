@@ -70,12 +70,6 @@ GameStartup::
 ; Ensure double speed mode
     call EnableDoubleSpeed
 
-; Set up timer
-    ;ld [TMA], a ; Reset the timer modulo value
-
-    ;ld a, %100  ; 4096 Hz timer, interrupts at 16 Hz. Could be subject to change!
-    ;ld [TAC], a
-
 ; Temporarily disable interrupts
     xor a
     ld [IE], a
@@ -116,7 +110,7 @@ GameStartup::
     ldh [ButtonsHeld], a
 
 ; Enable the correct interrupts
-    ld a, %00000001 ; [No Timer], [No LYC (LCD STAT)], V-Blank
+    ld a, %00000101 ; Timer, [No LYC (LCD STAT)], V-Blank
     ld [IE], a      ; TODO: Add serial to this to add link capablilities?
 
 .WaitUntilResetDone

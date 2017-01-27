@@ -8,7 +8,7 @@ SECTION "Azelea Town Test", ROMX
 ; TODO: Make these not need to be exported
 
 AzeleaTownTestPU1::
-    tempo $0B
+    tempo 187
     envelope $F1
     waveform 50
 

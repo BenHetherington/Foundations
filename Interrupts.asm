@@ -152,7 +152,6 @@ VBlankHandler::
     ldh [VBlankOccurred], a
 
     HandleButtons
-    call SoundEngineUpdate
 
 .DynamicHandlers
     call VBlankDIH

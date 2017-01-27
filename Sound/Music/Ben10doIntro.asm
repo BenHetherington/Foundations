@@ -5,14 +5,14 @@ SECTION "Ben10do Intro", ROMX
 ; TODO: Make these not need to be exported
 
 Ben10doIntroPU1::
-    tempo $03
+    tempo 25
     envelope $A8
     waveform 12.5
 
-    note D#4, 3
-    note ___, 3
-    note B_3, 3
-    note A#4, 27
+    note D#4, 6
+    note ___, 6
+    note B_3, 6
+    note A#4, 54
     envelope $87
 
     soundend
@@ -21,12 +21,12 @@ Ben10doIntroPU2::
     envelope $1F
     waveform 12.5
 
-    note ___, 9
+    note ___, 18
     table .ArpTable
-    note B_4, 30
+    note B_4, 60
     envelope $D7
 
-    wait 18
+    wait 36
 
     soundend
 
@@ -61,26 +61,26 @@ Ben10doIntroWAV::
     vol 3
     wavedata SawtoothWave
 
-    note D#4, 3
-    note ___, 3
-    note B_3, 3
-    note B_4, 18
+    note D#4, 6
+    note ___, 6
+    note B_3, 6
+    note B_4, 36
 
     vol 3
-    wait 9
+    wait 18
     vol 2
-    wait 9
+    wait 18
     vol 1
-    wait 9
+    wait 18
 
     vol 0
     soundend
 
 Ben10doIntroNOI::
     envelope $81
-    noise $79, 6
-    noise $57, 3
+    noise $79, 12
+    noise $57, 6
 
     envelope $85
-    noise $90, 3
+    noise $90, 6
     soundend

@@ -678,8 +678,16 @@ CheckFade:
     dec [hl]
     ret nz
 
-.DecrementVolume
     ld [hl], a
+
+    inc hl
+    dec [hl]
+    ret nz
+
+    ld a, 8
+    ld [hl], a
+
+.DecrementVolume
     ld a, [NR50]
     or a
     jr z, .Finish

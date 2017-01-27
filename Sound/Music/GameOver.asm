@@ -3,7 +3,7 @@ INCLUDE "Sound/Macros.inc"
 SECTION "Game Over", ROMX
 
 GameOverPU1::
-    tempo 12
+    tempo 193
     waveform 50
 
     transpose 0
