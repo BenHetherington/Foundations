@@ -30,6 +30,8 @@ Option5Data: ds 6
 Option6Data: ds 6
 Option7Data: ds 6
 
+SECTION "Cursor Animation", WRAM0
+
 CursorAnimation: db ; bit 7 - direction
                     ; bit 0-6 - frames left before swapping
 CursorAnimationWait: db
@@ -282,7 +284,7 @@ PromptLoop:
     jr .AButton
 
 ; Prints the cursor to a tile, to be used by a sprite.
-PrepareCursor:
+PrepareCursor::
 ; Reset subtile variables
     xor a
     ld [TextSubtilesPositionY], a
@@ -321,7 +323,7 @@ PrepareCursor:
     ei
     ret
 
-ClearCursor:
+ClearCursor::
     xor a
     ld [OAMData + $9C], a
     StartOAMDMA OAMData
@@ -406,6 +408,7 @@ SetCursor:
 
     call GetSpriteCoordinates
 
+SetCursorDirectly::
     ld hl, OAMData + $9C
     ld a, d
     ld [hl+], a
@@ -420,7 +423,7 @@ SetCursor:
     ld [CursorAnimationWait], a
     ret
 
-AnimateCursor:
+AnimateCursor::
 ; Check if we need to wait more frames
     ld hl, CursorAnimationWait
     dec [hl]

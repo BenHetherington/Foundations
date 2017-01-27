@@ -157,6 +157,14 @@ ATextBasedAdventure::
     call ShowTextBox
     ld hl, AssemblyString
     call PrintString
+
+    ld hl, KeyboardTest
+    call PrintString
+    call ShowKeyboard
+
+    call FastFadeText
+    call ClearTextBox
+    call SetDefaultTextColours
     
     ld hl, DemoStringOne
     call PrintString
@@ -363,6 +371,9 @@ EraseSaveDataConfirmation:
     db "Erase all save data?````\n"
     db "_@_", 1, RedColour, "_#1_"
     db "T`h`i`s` `c`a`n`'`t` `b`e` `u`n`d`o`n`e`._`_", 15 ,"\\"
+
+KeyboardTest:
+    db "So then, what's\nyour name?\\"
 
 ; Fast Fade Functions
 ; TODO: Refactor these, since there's tonnes of code reuse!
@@ -787,3 +798,12 @@ VerifyChecksum:
 PlayerName::
 ; TODO: Move this into RAM
     db "You\\"
+
+SineTable::
+; 256-byte sine table, with range 0-128.
+; TODO: Move this somewhere sensible
+ANGLE SET 0.0
+REPT 256
+    db (MUL(64.0, SIN(ANGLE)) + 64.0) >> 16
+ANGLE SET ANGLE+256.0
+ENDR

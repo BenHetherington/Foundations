@@ -35,12 +35,13 @@
 		B5AB38C61CF22CEC00B8B02C /* 16-bitMacros.inc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.pascal; path = "16-bitMacros.inc"; sourceTree = "<group>"; };
 		B5AB38C71CF22F0500B8B02C /* StringMacros.inc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.pascal; path = StringMacros.inc; sourceTree = "<group>"; };
 		B5AB38C81CF247DA00B8B02C /* Ben10doLogoTiles */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = Ben10doLogoTiles; sourceTree = "<group>"; };
+		B5ACC1FF1E1AF0A60090E8F8 /* Keyboard.asm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.asm.asm; path = Keyboard.asm; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.asm.arm; };
 		B5AF65891CDD39F60076ADC2 /* AzeleaTownTest.asm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.asm.asm; path = AzeleaTownTest.asm; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.asm.arm; };
-		B5B03C471D00EEBC00DDD350 /* AssemblyString.asm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.asm.asm; path = AssemblyString.asm; sourceTree = "<group>"; };
+		B5B03C471D00EEBC00DDD350 /* AssemblyString.asm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.asm.asm; path = AssemblyString.asm; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.asm.arm; };
 		B5B74CC71D1AD44D00188B7B /* Chord.bin */ = {isa = PBXFileReference; lastKnownFileType = archive.macbinary; path = Chord.bin; sourceTree = "<group>"; };
 		B5B74CC81D1AE8AC00188B7B /* Idea0906.asm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.asm.asm; path = Idea0906.asm; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.asm.arm; };
 		B5BE2CD31C6E3FC800A0F391 /* MusicPointers.asm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.asm.asm; path = MusicPointers.asm; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.asm.arm; };
-		B5BE2CD41C6E4C6C00A0F391 /* Subroutines.asm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.asm.asm; path = Subroutines.asm; sourceTree = "<group>"; };
+		B5BE2CD41C6E4C6C00A0F391 /* Subroutines.asm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.asm.asm; path = Subroutines.asm; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.asm.arm; };
 		B5D067F01D0717BD00D443A3 /* SamplePointers.asm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.asm.asm; path = SamplePointers.asm; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.asm.arm; };
 		B5D067F21D071E1800D443A3 /* Luc.bin */ = {isa = PBXFileReference; explicitFileType = compiled; path = Luc.bin; sourceTree = "<group>"; };
 		B5D067F41D071E9600D443A3 /* SampleData.asm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.asm.asm; name = SampleData.asm; path = Banks/SampleData.asm; sourceTree = "<group>"; };
@@ -88,6 +89,7 @@
 				B599ADC71C4182CE005C2B67 /* Header.asm */,
 				B599ADC81C4182CE005C2B67 /* IncompatibleGB.asm */,
 				B5440F661DE395B600BF5EC2 /* GameOverScreen.asm */,
+				B5ACC1FF1E1AF0A60090E8F8 /* Keyboard.asm */,
 				B599ADC91C4182CE005C2B67 /* lib */,
 				B599ADCF1C4182CE005C2B67 /* Sound */,
 				B54332061CF4FEC400A8642C /* Strings */,
@@ -155,7 +157,7 @@
 /* Begin PBXLegacyTarget section */
 		B599ADBF1C4181CF005C2B67 /* Foundations */ = {
 			isa = PBXLegacyTarget;
-			buildArgumentsString = "";
+			buildArgumentsString = "-s";
 			buildConfigurationList = B599ADC21C4181CF005C2B67 /* Build configuration list for PBXLegacyTarget "Foundations" */;
 			buildPhases = (
 			);
@@ -173,7 +175,7 @@
 		B599ADBB1C4181CF005C2B67 /* Project object */ = {
 			isa = PBXProject;
 			attributes = {
-				LastUpgradeCheck = 0720;
+				LastUpgradeCheck = 0820;
 				ORGANIZATIONNAME = Ben10do;
 				TargetAttributes = {
 					B599ADBF1C4181CF005C2B67 = {
@@ -211,8 +213,10 @@
 				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
 				CLANG_WARN_EMPTY_BODY = YES;
 				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
 				CLANG_WARN_INT_CONVERSION = YES;
 				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
@@ -251,8 +255,10 @@
 				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
 				CLANG_WARN_EMPTY_BODY = YES;
 				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
 				CLANG_WARN_INT_CONVERSION = YES;
 				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
