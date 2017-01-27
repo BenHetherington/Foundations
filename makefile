@@ -24,7 +24,7 @@ $(BUILD_DIR)%.o : %.asm $(INCLUDE_FILES)
 ifeq ($(wildcard $(BUILD_DIR)$(dir $<).),)
 	mkdir -p "$(BUILD_DIR)$(dir $<)"
 endif
-	rgbasm -o $@ $<
+	rgbasm -h -o $@ $<
 
 Engine.asm : Interface.s
 
