@@ -24,4 +24,4 @@ This demo currently contains some temporary content, including the following:
 
 Some code is adapted from other sources (e.g. libraries), and references or credits for these can usually be found in comments.
 
-**All other content, including music and graphics is © 2016 Ben10do.**
+**All other content, including music and graphics is © 2017 Ben10do.**
