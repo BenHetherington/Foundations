@@ -141,7 +141,7 @@ WaitFrames::
     jr nz, WaitFrames
     ret
 
-EnsureVBlank::
+EnsureVRAMAccess::
     di
 .Wait
     ld a, [STAT]
@@ -149,7 +149,7 @@ EnsureVBlank::
     ret z
     jr .Wait
 
-;EnsureVBlank:
+;EnsureVRAMAccess:
 ;; Returns immediately if in V-Blank, else returns once we're in it.
 ;    call CheckVBlank
 ;    ret nz
@@ -157,13 +157,22 @@ EnsureVBlank::
 ;;; TODO: Check if this is needed! This is unnecessary if H-Blank interrupts are always enabled.
 ;;    ld a, [STAT]
 ;;    bit 3, a
-;;    jr z, EnsureVBlank
+;;    jr z, EnsureVRAMAccess
 ;;.Halt
 ;;; Wait until the H-Blank interrupt fires.
 ;;    halt
 ;.CheckAgain
 ;; Acts like a busy-wait loop if not using the interrupt.
-;    jr EnsureVBlank
+;    jr EnsureVRAMAccess
+
+EnsureVBlank::
+    di
+.Wait
+    ld a, [STAT]
+    and a, %11
+    cp 1
+    ret z
+    jr .Wait
 
 CheckVBlank::
 ; If a is non-zero, we're in V-Blank. If a is zero, we're not in V-Blank.
@@ -402,7 +411,7 @@ SmallMemCopyRoutine::
 
 MemCopyFixedDestRoutine::
 .Loop
-    call EnsureVBlank
+    call EnsureVRAMAccess
     ld a, [hl+]
     ld [$FF00+c], a
     ei
@@ -415,7 +424,7 @@ VRAMCopyRoutine::
 ; Copies a region of VRAM. Adpated from Jeff Frohwein's memory.asm
 ; hl = source, de = destination, bc = byte count
 .loop
-    call EnsureVBlank
+    call EnsureVRAMAccess
     ld a,[hl+]
 	ld [de],a
     ei
@@ -431,7 +440,7 @@ VRAMCopyRoutine::
 SmallVRAMCopyRoutine::
 ; hl = source, de = destination, b = byte count
 .Loop
-    call EnsureVBlank
+    call EnsureVRAMAccess
     ld a, [hl+]
     ld [de], a
     ei
@@ -451,7 +460,7 @@ MemClearRoutine::
 
 SmallVRAMSetRoutine::
 .Loop
-    call EnsureVBlank
+    call EnsureVRAMAccess
     ld a, d
     ld [hl+], a
     ei
@@ -461,11 +470,14 @@ SmallVRAMSetRoutine::
 
 VRAMClearRoutine::
 .Loop
-    call EnsureVBlank
+    call EnsureVRAMAccess
     xor a
     ld [hl+], a
     ei
-    dec bc
+    dec c
+    jr nz, .Loop
+
+    dec b
     jr nz, .Loop
     ret
 

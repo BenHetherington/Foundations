@@ -235,7 +235,7 @@ MemClear: MACRO
 VRAMClear: MACRO
 ; \1 = destination, \2 = byte count
     ld hl, \1
-    ld bc, \2
+    ld bc, \2 + $0101
     call VRAMClearRoutine
     ENDM
 

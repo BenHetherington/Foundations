@@ -48,7 +48,7 @@ IncompatibleGBPrint
     call PrintString
 
 .SetMapLayout
-    call EnsureVBlank
+    call EnsureVRAMAccess
     ; TODO: Replace with standard copying subroutine
 
     ld hl, $9800 + $E1

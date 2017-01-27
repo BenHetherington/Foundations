@@ -185,7 +185,7 @@ DidYouWinPrompt:
 ; TODO: Refactor overworld character handling to somewhere else
 
 AddPlayerToScreen::
-    call EnsureVBlank
+    call EnsureVRAMAccess
     ei
 
     xor a
@@ -256,7 +256,7 @@ AnimateMovement::
     call ConfigurePlayerSprite
     StartOAMDMA OAMData
 
-    call EnsureVBlank
+    call EnsureVRAMAccess
     StartVRAMDMA hl, $8000, 64, 0
     ei
     ret
@@ -430,7 +430,7 @@ LoadMap::
     ld [SCY], a
     ld [SCX], a
 
-    call EnsureVBlank
+    call EnsureVRAMAccess
     StartVRAMDMA TempCaveTile, $9000, 16, 1
     ei
     call WaitForVRAMDMAToFinish

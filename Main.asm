@@ -61,14 +61,14 @@ Setup:
 
 GameStartup::
 ; This is the point where the game returns to on reset
-    xor a
+    ld a, 1
     ldh [ResetDisallowed], a
 
 ; Set up stack
     ld sp, StackEnd - 1
 
-; Use single speed mode, if we were in double speed when we reset
-    call DisableDoubleSpeed
+; Ensure double speed mode
+    call EnableDoubleSpeed
 
 ; Set up timer
     ;ld [TMA], a ; Reset the timer modulo value
@@ -76,26 +76,57 @@ GameStartup::
     ;ld a, %100  ; 4096 Hz timer, interrupts at 16 Hz. Could be subject to change!
     ;ld [TAC], a
 
-; Enable the correct interrupts
-    ld a, %00000001 ; [No Timer], [No LYC (LCD STAT)], V-Blank
-    ld [IE], a      ; TODO: Add serial to this to add link capablilities?
+; Temporarily disable interrupts
+    xor a
+    ld [IE], a
 
     call ResetInterruptHandlers
     call InitSoundEngine
+
+; Set up the OAM DMA Subroutine
+    MemCopy DMAWaitInROM, OAMDMAWait, 8
+
+; Switch off the display, reset the maps and sprites, and switch it back on
+    call EnsureVBlank
+    xor a
+    ld [LCDC], a
+
+    xor a
+    ld [VBK], a
+    VRAMClear $8000, $800
+
+    ld a, 1
+    ld [VBK], a
+    VRAMClear $8000, $800
+
+    MemClear OAMData, 160
+    StartOAMDMA OAMData
+
+    ld a, %10000001
+    ld [LCDC], a
 
 ; Start the temporary animation frame counter
     xor a
     ld [TempAnimWait], a
     ei
 
-; Set up the OAM DMA Subroutine
-    MemCopy DMAWaitInROM, OAMDMAWait, 8
-
+; Set up the button variables
     xor a
     ldh [ButtonsPressed], a
     ldh [ButtonsHeld], a
 
+; Enable the correct interrupts
+    ld a, %00000001 ; [No Timer], [No LYC (LCD STAT)], V-Blank
+    ld [IE], a      ; TODO: Add serial to this to add link capablilities?
+
+.WaitUntilResetDone
     call WaitFrame ; Wait until the reset keys have been released
+    ldh a, [ButtonsHeld]
+    cp %00001111
+    jr z, .WaitUntilResetDone
+
+    xor a
+    ldh [ResetDisallowed], a
 
 .SRAMTest
     call EnableSRAM
@@ -392,13 +423,13 @@ PromptTextFadeIn::
     ld a, (3 * 2) + (8 * 7) + %10000000
     ld [OBPI], a
 
-    call EnsureVBlank
+    call EnsureVRAMAccess
     xor a
     ld [BGPD], a
     ld [OBPD], a
     ei
 
-    call EnsureVBlank
+    call EnsureVRAMAccess
     ld a, c
     ld [BGPD], a
     ld [OBPD], a
@@ -428,7 +459,7 @@ FastFadeToBlack::
     ld a, c
     ld [BGPI], a
 
-    call EnsureVBlank
+    call EnsureVRAMAccess
     ld a, [BGPD]
     ei
     ld h, a
@@ -440,20 +471,20 @@ FastFadeToBlack::
 
     set 7, a ; Increment after writing
     ld [BGPI], a
-    call EnsureVBlank
+    call EnsureVRAMAccess
     ld a, [BGPD]
     ei
     ld l, a
 
 ; Manipulate the palette data
     srl16 hl, 1
-    call EnsureVBlank
+    call EnsureVRAMAccess
     ld a, l
     and %11101111
     ld [BGPD], a
     ei
 
-    call EnsureVBlank
+    call EnsureVRAMAccess
     ld a, h
     and %00111101
     ld [BGPD], a
@@ -472,7 +503,7 @@ FastFadeToBlack::
     ld a, c
     ld [OBPI], a
 
-    call EnsureVBlank
+    call EnsureVRAMAccess
     ld a, [OBPD]
     ei
     ld h, a
@@ -481,20 +512,20 @@ FastFadeToBlack::
     ld a, c
     set 7, a ; Increment after writing
     ld [OBPI], a
-    call EnsureVBlank
+    call EnsureVRAMAccess
     ld a, [OBPD]
     ei
     ld l, a
 
 ; Manipulate the palette data
     srl16 hl, 1
-    call EnsureVBlank
+    call EnsureVRAMAccess
     ld a, l
     and %11101111
     ld [OBPD], a
     ei
 
-    call EnsureVBlank
+    call EnsureVRAMAccess
     ld a, h
     and %00111101
     ld [OBPD], a
@@ -519,7 +550,7 @@ FastFadeToWhite::
     inc c
     ld a, c
     ld [BGPI], a
-    call EnsureVBlank
+    call EnsureVRAMAccess
     ld a, [BGPD]
     ei
     ld h, a
@@ -531,7 +562,7 @@ FastFadeToWhite::
 
     set 7, a ; Increment after writing
     ld [BGPI], a
-    call EnsureVBlank
+    call EnsureVRAMAccess
     ld a, [BGPD]
     ei
     ld l, a
@@ -547,7 +578,7 @@ FastFadeToWhite::
 .BGSkipOverflowR
     or a, %00100001
     ld e, a
-    call EnsureVBlank
+    call EnsureVRAMAccess
     ld a, e
     ld [BGPD], a
     ei
@@ -568,7 +599,7 @@ FastFadeToWhite::
 .BGSkipOverflowB
     or a, %00000100
     ld e, a
-    call EnsureVBlank
+    call EnsureVRAMAccess
     ld a, e
     ld [BGPD], a
     ei
@@ -597,7 +628,7 @@ FastFadeToWhite::
 .ContinueLoadingColour
     ld a, c
     ld [OBPI], a
-    call EnsureVBlank
+    call EnsureVRAMAccess
     ld a, [OBPD]
     ei
     ld h, a
@@ -606,7 +637,7 @@ FastFadeToWhite::
     ld a, c
     set 7, a ; Increment after writing
     ld [OBPI], a
-    call EnsureVBlank
+    call EnsureVRAMAccess
     ld a, [OBPD]
     ei
     ld l, a
@@ -628,7 +659,7 @@ FastFadeToWhite::
 .SpriteSkipOverflowG1
     or a, %00100001
     ld e, a
-    call EnsureVBlank
+    call EnsureVRAMAccess
     ld a, e
     ld [OBPD], a
     ei
@@ -649,7 +680,7 @@ FastFadeToWhite::
 .SpriteSkipOverflowB
     or a, %00000100
     ld e, a
-    call EnsureVBlank
+    call EnsureVRAMAccess
     ld a, e
     ld [OBPD], a
     ei

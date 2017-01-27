@@ -289,7 +289,7 @@ SetKeyboardMap:
     ld d, 11 ; Outer counter
 
 .ClearMapLoop
-    ld bc, 20 ; Inner counter
+    ld bc, 20 + $101 ; Inner counter
     call VRAMClearRoutine
 
     add16i hl, 12
@@ -301,12 +301,12 @@ SetKeyboardMap:
     ld c, 10 ; Counter (no. tiles / 2)
 
 .SpikesLoop
-    call EnsureVBlank
+    call EnsureVRAMAccess
     ld a, $80
     ld [hl+], a
     ei
 
-    call EnsureVBlank
+    call EnsureVRAMAccess
     ld a, $81
     ld [hl+], a
     ei
@@ -321,7 +321,7 @@ SetKeyboardMap:
     ld d, $82    ; Current tile value
 
 .CharactersLoop
-    call EnsureVBlank
+    call EnsureVRAMAccess
     ld a, d
     ld [hl+], a
     ei
@@ -343,7 +343,7 @@ SetKeyboardMap:
     ld d, $B8    ; Current tile value
 
 .ControlsLoop
-    call EnsureVBlank
+    call EnsureVRAMAccess
     ld a, d
     ld [hl+], a
     ei

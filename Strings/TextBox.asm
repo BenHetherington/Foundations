@@ -27,7 +27,7 @@ ShowTextBox::
 
 .SetPalettes
     call SetDefaultTextColours
-    call EnsureVBlank
+    call EnsureVRAMAccess
 
 .SetMapAttributes
     ; TODO: Use DMA
@@ -40,7 +40,7 @@ ShowTextBox::
     ld b, 6
     ld c, 20
 .MapAttributesLoop
-    call EnsureVBlank
+    call EnsureVRAMAccess
     ld a, (7 | %1000) ; TODO: Write a description
     ld [hl+], a
     ei
@@ -64,7 +64,7 @@ ShowTextBox::
     ld c, 18
     ld d, a
 .MapLayoutLoop
-    call EnsureVBlank
+    call EnsureVRAMAccess
     ld a, d
     ld [hl+], a
     ei
@@ -202,7 +202,7 @@ ReplaceLastTile::
     ld a, [bc]
     push bc
     call Convert1BitTileLine
-    call EnsureVBlank
+    call EnsureVRAMAccess
     ld a, b
     ld [hl+], a
     ld a, c
@@ -235,7 +235,7 @@ FastFadeText::
     ld a, c
     ld [BGPI], a
 
-    call EnsureVBlank
+    call EnsureVRAMAccess
     ld a, [BGPD]
     ei
     ld h, a
@@ -247,14 +247,14 @@ FastFadeText::
 
     set 7, a ; Increment after writing
     ld [BGPI], a
-    call EnsureVBlank
+    call EnsureVRAMAccess
     ld a, [BGPD]
     ei
     ld l, a
 
 ; Manipulate the palette data
     srl16 hl, 1
-    call EnsureVBlank
+    call EnsureVRAMAccess
     ld a, l
     and %11100111
     ld [BGPD], a
@@ -272,7 +272,7 @@ FastFadeText::
     ld b, 63 | (1 << 7) ; Address (+ increment on write)
     ld a, b
     ld [OBPI], a
-    call EnsureVBlank
+    call EnsureVRAMAccess
     ld a, [OBPD]
     ei
     ld h, a
@@ -280,14 +280,14 @@ FastFadeText::
     dec b
     ld a, b
     ld [OBPI], a
-    call EnsureVBlank
+    call EnsureVRAMAccess
     ld a, [OBPD]
     ei
     ld l, a
 
 ; Manipulate the palette data
     srl16 hl, 1
-    call EnsureVBlank
+    call EnsureVRAMAccess
     ld a, l
     and %11100111
     ld [OBPD], a

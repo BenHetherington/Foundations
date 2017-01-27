@@ -171,7 +171,7 @@ InitPrompt:
     ld a, (2 * 2) + (8 * 7) + %10000000 ; Set text colour 2
     ld [BGPI], a
 
-    call EnsureVBlank
+    call EnsureVRAMAccess
     xor a ; Black
     ld [BGPD], a
     ld [BGPD], a
@@ -303,7 +303,7 @@ PrepareCursor::
 ; Set the sprite colour
 ; TODO: Refactor?
     ld de, $00FF
-    call EnsureVBlank
+    call EnsureVRAMAccess
     ld c, (OBPI & $FF)
 
     ld a, $3E | (%10000000)

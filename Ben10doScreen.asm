@@ -125,7 +125,7 @@ ShowBen10doScreen::
     call WaitForVRAMDMAToFinish
 
 .TweakMap
-    call EnsureVBlank
+    call EnsureVRAMAccess
     ei
     ld hl, $9907
     xor a

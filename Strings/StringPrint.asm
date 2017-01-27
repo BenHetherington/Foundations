@@ -319,7 +319,7 @@ ProcessSpecialCharacter
     add a, a
     add a, (8 * 7) + %10000000
     ld [BGPI], a
-    call EnsureVBlank
+    call EnsureVRAMAccess
     ld a, [hl+]
     ld [BGPD], a
     ld a, [hl+]
@@ -453,7 +453,7 @@ PutChar::
     jr z, .CheckSecondByte ; won't be any data to copy in the first byte.
 
 .FirstByte
-    call EnsureVBlank
+    call EnsureVRAMAccess
     ld a, [hl]
     or a, b
     ld [hl], a
@@ -465,7 +465,7 @@ PutChar::
     jr z, .FinishCopy ; won't be any data to copy in the second byte.
 
 .SecondByte
-    call EnsureVBlank
+    call EnsureVRAMAccess
     ld a, [hl]
     or a, c
     ld [hl], a
@@ -779,7 +779,7 @@ SetDefaultTextColours::
     ld d, 2
     ld b, 0
 .PaletteLoop
-    call EnsureVBlank
+    call EnsureVRAMAccess
     ld a, b
     ld [BGPD], a
     ei
