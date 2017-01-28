@@ -213,8 +213,6 @@ ATextBasedAdventure::
     or a
     jr z, .SkipSave
 
-    call EnableDoubleSpeed
-
     ld hl, SavingString
     call PrintString
 
@@ -253,8 +251,6 @@ ATextBasedAdventure::
     call CloseTextBox
 
     call FastFadeToBlack
-
-    call DisableDoubleSpeed
 
     ; TODO: Must include a suitable seed in a
     ld a, [$DD9B] ; This is very temporary
@@ -742,7 +738,6 @@ SECTION "VerifyChecksums", ROM0
 
 VerifyChecksum:
 ; Leaves 0 in a if the checksum is correct, 1 otherwise
-    call EnableDoubleSpeed
     PushROMBank
     SwitchROMBank 0
     ld de, 0 ; Checksum
@@ -815,7 +810,6 @@ VerifyChecksum:
 .CleanUp
     ld b, a
     PopROMBank
-    call DisableDoubleSpeed
     ld a, b
     ret
 

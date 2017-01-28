@@ -71,16 +71,7 @@ EnableDoubleSpeed::
     ld a, [KEY1]
     bit 7, a
     ret nz
-.Switch
-    ld a, [TMA]
-    cpl
-    inc a
 
-    add a, a
-    cpl
-    inc a
-
-    ld [TMA], a
     jr SwitchSpeed
 
 DisableDoubleSpeed::
@@ -88,16 +79,7 @@ DisableDoubleSpeed::
     ld a, [KEY1]
     bit 7, a
     ret z
-.Switch
-    ld a, [TMA]
-    cpl
-    inc a
 
-    srl a
-    cpl
-    inc a
-
-    ld [TMA], a
     jr SwitchSpeed
 
 WaitForVRAMDMAToFinish::

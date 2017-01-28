@@ -46,8 +46,6 @@ ShowGameOverScreen::
     ld a, 5
     call PlayMusic
 
-    call EnableDoubleSpeed
-
 ; Set the background map and tiles
 ; TODO: Check if the BlankTiles will be accessible from this bank
     ld a, 1

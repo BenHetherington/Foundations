@@ -104,14 +104,10 @@ ShowBen10doScreen::
     PushWRAMBank
     SwitchWRAMBank BANK(DecompressionWorkSpace)
 
-    call EnableDoubleSpeed
-
     ld de, DecompressionWorkSpace
     ld hl, CompressedBen10doScreenData
 
     call Unpack
-
-    call DisableDoubleSpeed
 
 .CopyTiles
     StartVRAMDMA BlankTiles, $8000, $10, 1
