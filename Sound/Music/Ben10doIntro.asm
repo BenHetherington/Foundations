@@ -36,23 +36,23 @@ Ben10doIntroPU2::
     twait
 
     ttrans 4
-    pan _R
+    gbapan _R
     twait
 
     ttrans 11
-    pan L_
+    gbapan L_
     twait
 
     ttrans 0
-    pan _R
+    gbapan _R
     twait
 
     ttrans 4
-    pan L_
+    gbapan L_
     twait
 
     ttrans 11
-    pan _R
+    gbapan _R
     twait
 
     soundjp .ArpTable

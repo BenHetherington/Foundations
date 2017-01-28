@@ -332,6 +332,16 @@ UpdateChannel
     pop hl
     jp .CheckNoteCommand
 
+.GBAEnvelope
+    ldh a, [PlayingOnGBA]
+    or a
+    jr nz, .Envelope
+
+    ; Else, we're on a GBC, so just skip over the envelope byte
+    pop hl
+    inc hl
+    jp .CheckNoteCommand
+
 .Noise
 ; Plays a noise note (for $80-$FF)
     pop hl
@@ -451,6 +461,16 @@ UpdateChannel
     ld [NR51], a
 
     jp .CheckNoteCommand ; TODO: Make jr?
+
+.GBAPan
+    ldh a, [PlayingOnGBA]
+    or a
+    jr nz, .Pan
+
+    ; Else, we're on a GBC, so just skip over the pan byte
+    pop hl
+    inc hl
+    jp .CheckNoteCommand
 
 .Sweep
     pop hl
@@ -663,6 +683,8 @@ UpdateChannel
     dw .TableTranspose  ; Table transpose
     dw .KillNote        ; Kill note
     dw .Noise           ; Noise
+    dw .GBAEnvelope     ; GBA-only envelope
+    dw .GBAPan          ; GBA-only pan
     dw .Jump            ; Jump
     dw .Call            ; Call
     dw .Return          ; Ret

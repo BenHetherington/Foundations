@@ -150,7 +150,7 @@ OpenFifthV14 EQU $01
 ; Command bytes
 ; (Numbers less than $80 are reserved for notes)
 CommandByte EQU $80
-BiggestCommand EQU $96
+BiggestCommand EQU $98
 
 EnvelopeByte EQU $80
 TempoByte EQU $81
@@ -171,12 +171,14 @@ TransposeByte EQU $8F
 TableTransposeByte EQU $90
 KillNoteByte EQU $91
 NoiseByte EQU $92
+GBAEnvelopeByte EQU $93
+GBAPanByte EQU $94
 
 ; Organisational bytes
-SoundJPByte EQU $93
-SoundCallByte EQU $94
-SoundRetByte EQU $95
-SoundEndByte EQU $96
+SoundJPByte EQU $95
+SoundCallByte EQU $96
+SoundRetByte EQU $97
+SoundEndByte EQU $98
 
 ; Command macros
 
@@ -205,6 +207,12 @@ noise: MACRO
 envelope: MACRO
 ; Use the given envelope (volume/attack/release)
     db EnvelopeByte, (\1)
+    ENDM
+
+gbaenvelope: MACRO
+; If on a GBA, act like the envelope command; otherwise, do nothing
+; Useful to compensate for volume differences when using gbapan
+    db GBAEnvelopeByte, (\1)
     ENDM
 
 vol: MACRO
@@ -245,6 +253,12 @@ mastervol: MACRO
 pan: MACRO
 ; Pan the current sound channel left, right, neither, or centre
     db PanByte, (\1)
+    ENDM
+
+gbapan: MACRO
+; If on a GBA, act like the pan command; otherwise, do nothing
+; Useful for rapid panning in tables when using a GBA, avoiding the clicks from a GBC
+    db GBAPanByte, (\1)
     ENDM
 
 sweep: MACRO

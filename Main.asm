@@ -10,13 +10,13 @@ INCLUDE "Strings/charmap.inc"
 SECTION "Quick-access Variables", HRAM
 VBlankOccurred:: db
 ResetDisallowed:: db
+PlayingOnGBA:: db
 ButtonsPressed:: db
 ButtonsHeld:: db
 
 GradientData:: ds 2 * 18
 
 SECTION "General Variables", WRAM0
-PlayingOnGBA:: db
 TempAnimFrame:: db
 TempAnimWait:: db
 
@@ -53,7 +53,7 @@ Setup:
     inc a
 
 .WriteGBAByte
-    ld [PlayingOnGBA], a
+    ldh [PlayingOnGBA], a
     jr GameStartup
 
 .OriginalGameBoy
