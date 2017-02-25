@@ -461,7 +461,7 @@ PlayerAnimationStateEnd:
 ; TODO: Should this be in a different section?
 CheckEncounterFlag: db
 
-SECTION "Temp Player", ROMX[$6000]
+SECTION "Temp Player", ROMX, ALIGN[4]
 
 ; TODO: Move into a seperate binary file
 
