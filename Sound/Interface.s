@@ -6,7 +6,7 @@ InitSoundEngine::
     ; TODO: Reset the sound hardware!
 
     ld a, %110
-    ld [TAC], a ; 128kHz / 128 = Fires at 512Hz
+    ld [TAC], a ; 64kHz / 128 = Fires at 512Hz
 
     ld a, $80
     ld [TMA], a
