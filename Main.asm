@@ -20,7 +20,7 @@ SECTION "General Variables", WRAM0
 TempAnimFrame:: db
 TempAnimWait:: db
 
-SECTION "OAM Data", WRAM0[$C000]
+SECTION "OAM Data", WRAM0, ALIGN[8]
 OAMData:: ds 160
 
 StackSize EQU $80
